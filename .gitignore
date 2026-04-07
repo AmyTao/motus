@@ -1,0 +1,53 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# API keys and environment files
+.env
+.env.*
+
+# Virtual environments
+.venv
+
+# Logs and databases
+*.DS_Store
+
+# MkDocs build output
+site/
+
+# Auto-generated example docs (created by generate_examples.py hook)
+docs/examples/*
+!docs/examples/index.md
+
+# assets
+*.png
+*.pptx
+node_modules
+!assets/*
+
+# Tracer Output
+traces/
+*.html
+!**/templates/trace_viewer.html
+
+# large skills folder
+# **/skills/
+
+# Development
+TODO.md
+.pytest_cache/
+.ruff_cache/
+.vscode/
+
+# Agent memory
+.motus_memory/
+
+# Terminal Benchmarks
+**/jobs/
+
+# Motus configuration
+motus.toml
