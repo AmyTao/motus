@@ -31,7 +31,7 @@
 
 ## About
 
-Agentic inference is exploding. Motus is an open-source agent serving project that enables higher capability, lower cost, and faster agents---while making deployment simple across local and cloud environments at any scale.
+Agentic inference is exploding. Motus is an open-source agent serving project that enables higher capability, lower cost, and faster agents. It keeps deployment simple across local and cloud environments at any scale.
 
 ## Use with your coding agent
 
