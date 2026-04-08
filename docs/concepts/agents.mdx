@@ -1,0 +1,212 @@
+---
+title: "Agents"
+description: "Build LLM-powered agents that reason, act, and loop using ReActAgent."
+---
+
+`ReActAgent` is the core building block in Motus. It runs a ReAct (Reasoning + Acting) loop: the agent calls the LLM, executes any tool calls the model requests, feeds results back, and repeats until the model returns a final answer. Memory, caching, guardrails, and usage tracking are all built in.
+
+## Minimal example
+
+```python
+import asyncio
+from motus.agent import ReActAgent
+from motus.models import OpenAIChatClient
+from motus.tools import tool
+
+@tool
+async def weather(city: str) -> str:
+    """Get the weather for a city."""
+    return f"22°C and sunny in {city}."
+
+client = OpenAIChatClient(api_key="sk-...")
+agent = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    system_prompt="You are a helpful assistant.",
+    tools=[weather],
+)
+
+async def main():
+    response = await agent("What's the weather in Tokyo?")
+    print(response)
+
+asyncio.run(main())
+```
+
+The agent sends your prompt to the LLM along with the tool definitions. When the LLM returns a tool call, the agent executes it, feeds the result back, and loops. When the LLM returns a text response with no tool calls, the loop ends.
+
+## Constructor parameters
+
+| Parameter | Type | Default | Purpose |
+|-----------|------|---------|---------|
+| `client` | `BaseChatClient` | required | LLM provider client |
+| `model_name` | `str` | required | Model identifier (e.g. `"gpt-4o"`, `"claude-sonnet-4-20250514"`) |
+| `name` | `str \| None` | auto-inferred | Agent name for tracing and tool registration |
+| `system_prompt` | `str \| None` | `None` | System prompt prepended to every LLM call |
+| `tools` | list, dict, or single | `None` | Tools available to the agent |
+| `max_steps` | `int` | `20` | Max reasoning-action cycles before the agent stops |
+| `timeout` | `float \| None` | `None` | Timeout in seconds for the entire run |
+| `memory_type` | `"basic" \| "compact"` | `"basic"` | Memory strategy |
+| `memory` | `BaseMemory \| None` | `None` | Custom memory instance (overrides `memory_type`) |
+| `response_format` | `type[BaseModel] \| None` | `None` | Structured output via Pydantic model |
+| `input_guardrails` | `list[Callable]` | `[]` | Pre-run validation hooks |
+| `output_guardrails` | `list[Callable]` | `[]` | Post-run validation hooks |
+| `reasoning` | `ReasoningConfig` | `ReasoningConfig.auto()` | Controls LLM extended thinking |
+| `cache_policy` | `CachePolicy \| str` | `"auto"` | Prompt caching strategy (Anthropic only) |
+| `step_callback` | `Callable \| None` | `None` | Async callback invoked after each LLM step |
+
+See [Model Clients](/concepts/models) for client setup, [Tools](/concepts/tools) for tool definitions, and [Memory](/concepts/memory) for memory strategies.
+
+## Multi-turn conversations
+
+Each time you call the agent, it appends the user message and the assistant reply to its memory. The full history is sent to the LLM on the next call.
+
+```python
+import asyncio
+from motus.agent import ReActAgent
+from motus.models import OpenAIChatClient
+
+client = OpenAIChatClient(api_key="sk-...")
+agent = ReActAgent(client=client, model_name="gpt-4o")
+
+async def main():
+    await agent("My name is Alice.")
+    response = await agent("What's my name?")
+    print(response)  # "Alice"
+
+asyncio.run(main())
+```
+
+<Tip>
+For long conversations, switch to `memory_type="compact"` to keep token usage under control. See [Memory](/concepts/memory) for details.
+</Tip>
+
+## Structured output
+
+Pass a Pydantic model as `response_format` to get typed responses instead of raw strings. The agent uses the LLM's structured output mode to guarantee valid JSON conforming to your schema.
+
+```python
+import asyncio
+from pydantic import BaseModel
+from motus.agent import ReActAgent
+from motus.models import OpenAIChatClient
+
+class Sentiment(BaseModel):
+    label: str
+    score: float
+
+client = OpenAIChatClient(api_key="sk-...")
+agent = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    response_format=Sentiment,
+)
+
+async def main():
+    result = await agent("Analyze: 'I love this product'")
+    # result is a Sentiment instance
+    print(result.label, result.score)
+
+asyncio.run(main())
+```
+
+The return value is a parsed Pydantic model instance, not a string.
+
+## Agent as tool
+
+Expose an agent as a callable tool for another agent using `as_tool()`. This lets a supervisor agent delegate subtasks to specialist agents.
+
+```python
+from motus.agent import ReActAgent
+from motus.models import OpenAIChatClient
+
+client = OpenAIChatClient(api_key="sk-...")
+
+researcher = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    name="researcher",
+    system_prompt="You research topics thoroughly.",
+)
+
+supervisor = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    system_prompt="You coordinate research tasks.",
+    tools=[researcher.as_tool(description="Research a topic in depth")],
+)
+```
+
+`as_tool()` accepts optional `name`, `description`, `output_extractor`, and `stateful` parameters. When `stateful=True`, the sub-agent preserves its memory across calls within the same parent run.
+
+<Note>
+You can also pass an agent instance directly as a tool without calling `as_tool()` — Motus wraps it automatically. See [Tools](/concepts/tools) for the full tool API.
+</Note>
+
+## Forking
+
+`agent.fork()` creates an independent copy of the agent with the same configuration and a forked copy of the conversation history. Changes to the forked agent's memory do not affect the original.
+
+```python
+import asyncio
+from motus.agent import ReActAgent
+from motus.models import OpenAIChatClient
+
+client = OpenAIChatClient(api_key="sk-...")
+agent = ReActAgent(client=client, model_name="gpt-4o")
+
+async def main():
+    await agent("My name is Alice.")
+
+    forked = agent.fork()
+    # forked agent remembers "Alice" but diverges from here
+    await forked("Call me Bob instead.")
+
+    original_response = await agent("What's my name?")   # "Alice"
+    forked_response = await forked("What's my name?")     # "Bob"
+
+asyncio.run(main())
+```
+
+This is useful for running parallel exploratory conversations or A/B comparisons from the same conversation checkpoint.
+
+## Timeouts and step limits
+
+Use `max_steps` to cap the number of reasoning-action cycles. Use `timeout` to set a wall-clock deadline in seconds.
+
+```python
+agent = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    max_steps=5,
+    timeout=30.0,
+)
+```
+
+- If `max_steps` is reached without a final response, the agent raises `RuntimeError`.
+- If `timeout` is exceeded, the agent raises `TimeoutError` before starting the next step.
+
+Catch these errors if graceful degradation is needed.
+
+## Usage tracking
+
+After a run, inspect token counts, estimated cost, and context window usage:
+
+```python
+response = await agent("Explain quantum computing.")
+
+print(agent.usage)
+# {"input_tokens": 1234, "output_tokens": 567, "cache_read_input_tokens": 200, ...}
+
+print(agent.cost)
+# 0.0042  (USD, or None if pricing unavailable for the model)
+
+print(agent.context_window_usage)
+# {"estimated_tokens": 1801, "threshold": 150000, "ratio": 0.012, "percent": "1%"}
+```
+
+| Attribute | Description |
+|-----------|-------------|
+| `agent.usage` | Accumulated token counts across all LLM calls in the run |
+| `agent.cost` | Total cost in USD based on model pricing, or `None` if the model has no pricing entry |
+| `agent.context_window_usage` | Current memory utilization relative to the compaction threshold |

@@ -1,0 +1,175 @@
+---
+title: "Guardrails"
+description: "Validate or transform agent inputs and outputs before and after execution using plain Python functions."
+---
+
+Guardrails are plain Python functions — no base class, no registration DSL. Attach them to agents or individual tools to validate, transform, or block inputs and outputs. Three conventions govern every guardrail:
+
+- **Return `None`** (or nothing) — pass through unchanged.
+- **Return a value** (`str`, `dict`, or the appropriate type) — replace or update the input/output.
+- **Raise an exception** — block execution entirely.
+
+Both sync and async guardrail functions are supported. Sync functions run on a background thread via `asyncio.to_thread`.
+
+<Note>
+  Guardrails declare only the parameters they care about. The system inspects the function signature and extracts matching values automatically — you never need to accept the full set of arguments.
+</Note>
+
+## Input guardrails
+
+Tool input guardrails run before the tool function executes. They receive keyword arguments that match their declared parameter names.
+
+```python
+from motus.guardrails import ToolInputGuardrailTripped
+from motus.tools import FunctionTool
+
+def block_drop(query: str):
+    if "DROP" in query.upper():
+        raise ToolInputGuardrailTripped("DROP statements are forbidden")
+
+sql_tool = FunctionTool(execute_sql, input_guardrails=[block_drop])
+```
+
+The guardrail declares `query` — other tool parameters are ignored.
+
+To **modify** an argument instead of blocking, return a `dict`. The returned dict merges into the tool's kwargs — keys you omit stay unchanged:
+
+```python
+import re
+
+def redact_api_key(token: str) -> dict:
+    return {"token": re.sub(r"sk-\w+", "[REDACTED]", token)}
+```
+
+## Output guardrails
+
+Tool output guardrails run after the tool returns, before the result is encoded back to the model. They receive the typed return value directly:
+
+```python
+import re
+from motus.tools import FunctionTool
+
+def redact_passwords(result: str) -> str:
+    return re.sub(r"password=\S+", "password=***", result)
+
+tool = FunctionTool(get_user, output_guardrails=[redact_passwords])
+```
+
+When a tool guardrail raises, the exception message is returned to the model as a tool error. The agent sees the feedback and can adjust without crashing the run.
+
+## Agent guardrails
+
+Attach guardrails to a `ReActAgent` using `input_guardrails` and `output_guardrails`:
+
+```python
+from motus.agent import ReActAgent
+from motus.guardrails import InputGuardrailTripped
+from motus.models import OpenAIChatClient
+
+def no_homework(value: str, agent):
+    if "homework" in value.lower():
+        raise InputGuardrailTripped("No homework help!")
+
+def redact_ssn(value: str) -> str:
+    import re
+    return re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[SSN]", value)
+
+client = OpenAIChatClient()
+agent = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    input_guardrails=[no_homework],
+    output_guardrails=[redact_ssn],
+)
+```
+
+- Input guardrails receive the user's prompt as a string. If the guardrail also declares an `agent` parameter, the agent instance is passed in. Return a string to rewrite the prompt; raise `InputGuardrailTripped` to block the run.
+- Output guardrails receive the final response string (when no `response_format` is set). Return a string to replace the output; raise `OutputGuardrailTripped` to block.
+
+Agent guardrail exceptions propagate to the caller, unlike tool guardrails which are caught internally.
+
+## Tool guardrails (decorator)
+
+Attach guardrails directly on the `@tool` decorator:
+
+```python
+from motus.guardrails import ToolInputGuardrailTripped
+from motus.tools import tool
+
+def normalize_whitespace(text: str) -> dict:
+    return {"text": " ".join(text.split())}
+
+def lowercase(text: str) -> dict:
+    return {"text": text.lower()}
+
+def reject_profanity(text: str):
+    bad_words = {"damn", "crap"}
+    if set(text.split()) & bad_words:
+        raise ToolInputGuardrailTripped("Profanity detected")
+
+@tool(input_guardrails=[normalize_whitespace, lowercase, reject_profanity])
+async def post_comment(text: str) -> str:
+    """Post a comment."""
+    return f"posted: {text}"
+```
+
+When you pass multiple guardrails they form a sequential pipeline — each guardrail sees the output of the previous one. Input `"  Hello   WORLD  "` flows through: normalize → lowercase → profanity check. The tool receives `"hello world"`.
+
+## Structured output guardrails
+
+When the agent uses `response_format` with a Pydantic `BaseModel`, output guardrails use field matching — declare only the fields you need to inspect:
+
+```python
+from pydantic import BaseModel
+from motus.agent import ReActAgent
+from motus.guardrails import OutputGuardrailTripped
+from motus.models import OpenAIChatClient
+
+class AnalysisResult(BaseModel):
+    score: float
+    summary: str
+
+def validate_score(score: float):
+    if score < 0 or score > 1:
+        raise OutputGuardrailTripped("Score must be between 0 and 1")
+
+client = OpenAIChatClient()
+agent = ReActAgent(
+    client=client,
+    model_name="gpt-4o",
+    response_format=AnalysisResult,
+    output_guardrails=[validate_score],
+)
+```
+
+`validate_score` declares `score` — other fields are passed through untouched. Return a `dict` for partial updates, for example `{"raw_data": "[REDACTED]"}`.
+
+## Where to attach guardrails
+
+| Level | How | Parameters |
+|-------|-----|------------|
+| Single tool | `@tool(...)` or `FunctionTool(...)` | `input_guardrails`, `output_guardrails` |
+| Tool collection | `@tools(...)` on the class | `input_guardrails`, `output_guardrails` |
+| Agent | `ReActAgent(...)` | `input_guardrails`, `output_guardrails` |
+
+For tool collections, method-level `@tool` guardrails override class-level defaults — they do not merge.
+
+## Exception reference
+
+All guardrail exceptions inherit from `GuardrailTripped`:
+
+| Exception | Where it applies |
+|-----------|-----------------|
+| `InputGuardrailTripped` | Agent input guardrails |
+| `OutputGuardrailTripped` | Agent output guardrails |
+| `ToolInputGuardrailTripped` | Tool input guardrails |
+| `ToolOutputGuardrailTripped` | Tool output guardrails |
+
+```python
+from motus.guardrails import (
+    InputGuardrailTripped,
+    OutputGuardrailTripped,
+    ToolInputGuardrailTripped,
+    ToolOutputGuardrailTripped,
+)
+```

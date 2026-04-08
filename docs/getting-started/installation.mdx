@@ -1,0 +1,92 @@
+---
+title: "Installation"
+description: "Install Motus via pip or uv and configure your API keys."
+---
+
+## Prerequisites
+
+Before you install Motus, make sure you have:
+
+- **Python 3.12 or later**
+- **uv** (recommended) or pip
+- An API key from at least one LLM provider — OpenAI, Anthropic, Google, or OpenRouter
+
+## Install Motus
+
+<CodeGroup>
+
+```bash uv
+uv add lithosai-motus
+```
+
+```bash pip
+pip install lithosai-motus
+```
+
+</CodeGroup>
+
+<Tip>uv resolves dependencies faster and produces more reliable environments than pip. If you don't have it yet, install it with `curl -Lsf https://astral.sh/uv/install.sh | sh`.</Tip>
+
+### Optional SDK extras
+
+Install optional extras to use Motus alongside other agent frameworks:
+
+<Tabs>
+  <Tab title="OpenAI Agents SDK">
+    ```bash uv
+    uv add "lithosai-motus[openai-agents]"
+    ```
+
+    ```bash pip
+    pip install "lithosai-motus[openai-agents]"
+    ```
+  </Tab>
+  <Tab title="Google ADK">
+    ```bash uv
+    uv add "lithosai-motus[google-adk]"
+    ```
+
+    ```bash pip
+    pip install "lithosai-motus[google-adk]"
+    ```
+  </Tab>
+  <Tab title="All extras">
+    ```bash uv
+    uv add "lithosai-motus[openai-agents,google-adk]"
+    ```
+
+    ```bash pip
+    pip install "lithosai-motus[openai-agents,google-adk]"
+    ```
+  </Tab>
+</Tabs>
+
+## Verify the installation
+
+Run this one-liner to confirm Motus installed correctly:
+
+```bash
+python -c "from motus.agent import ReActAgent; print('Motus is ready')"
+```
+
+You should see `Motus is ready` printed to your terminal.
+
+## Set your API keys
+
+Export at least one provider API key before running an agent. Motus reads these from environment variables at runtime.
+
+```bash
+export OPENAI_API_KEY=sk-...
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENROUTER_API_KEY=sk-or-...
+```
+
+<Note>You only need the key for the provider you plan to use. If you are not sure which to pick, OpenAI's `gpt-4o` and Anthropic's `claude-sonnet-4-20250514` are both well-tested with Motus.</Note>
+
+## Next steps
+
+Now that Motus is installed, build and run your first agent.
+
+<Card title="Quick Start" icon="rocket" href="/getting-started/quickstart">
+  Create a tool, wire up a model client, and run your first ReAct agent in minutes.
+</Card>

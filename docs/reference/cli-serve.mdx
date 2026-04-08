@@ -1,0 +1,270 @@
+---
+title: "motus serve"
+description: "CLI reference for the motus serve command group. Use these commands to run your agent as an HTTP API locally and interact with it from the terminal."
+---
+
+The `motus serve` command group starts an agent HTTP server and provides subcommands to interact with it — chatting, managing sessions, and sending messages — all from the terminal.
+
+---
+
+## motus serve start
+
+Start an HTTP server that wraps the agent at the given import path.
+
+```bash
+motus serve start <agent> [options]
+```
+
+### Positional argument
+
+<ParamField path="agent" type="string" required>
+  Python import path to the agent object in `module:variable` format. For example, `myapp:my_agent` imports `my_agent` from `myapp.py`. The object must be importable from the working directory.
+</ParamField>
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--host` | `0.0.0.0` | Network address to bind to |
+| `--port` | `8000` | Port to listen on |
+| `--workers` | CPU count | Maximum concurrent worker processes |
+| `--ttl` | `0` | Idle/error session expiry in seconds (`0` disables expiry) |
+| `--timeout` | `0` | Maximum seconds per agent turn before the worker is killed (`0` means no limit) |
+| `--max-sessions` | `0` | Maximum number of concurrent sessions (`0` means unlimited) |
+| `--shutdown-timeout` | `0` | Seconds to wait for in-flight tasks on shutdown before cancelling (`0` waits indefinitely) |
+| `--allow-custom-ids` | `false` | Enable `PUT /sessions/{id}` so clients can specify their own session IDs |
+| `--log-level` | `info` | Log verbosity: `debug`, `info`, `warning`, or `error` |
+
+### Example
+
+```bash
+# Start on port 8080 with 8 worker processes
+motus serve start myapp:my_agent --port 8080 --workers 8
+
+# Enable custom session IDs with a 1-hour idle TTL
+motus serve start myapp:my_agent --allow-custom-ids --ttl 3600
+
+# Limit concurrency and set a per-turn timeout
+motus serve start myapp:my_agent --max-sessions 50 --timeout 30
+```
+
+---
+
+## motus serve chat
+
+Send a single message to a running agent or enter an interactive REPL.
+
+```bash
+motus serve chat <url> [message] [options]
+```
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--session` | — | Resume an existing session by ID instead of creating a new one |
+| `--keep` | `false` | Preserve the session on exit and print its ID for later `--session` use |
+| `--param` | — | `KEY=VALUE` parameter passed to the agent as `user_params` (repeatable). Numeric values are auto-coerced to `int` or `float`. |
+
+### Single message example
+
+```bash
+# Send one message, print the response, and exit
+motus serve chat http://localhost:8000 "What is 2+2?"
+```
+
+Without `--keep`, `chat` creates a fresh session, sends the message, prints the response, and then deletes the session.
+
+### Interactive REPL example
+
+```bash
+# Enter an interactive session (Ctrl-C to quit)
+motus serve chat http://localhost:8000
+Chat session started (Ctrl+C to quit)
+
+> hello
+hi there
+> how are you?
+I'm doing well!
+^C
+Bye!
+```
+
+To keep the session after exiting so you can resume it later:
+
+```bash
+motus serve chat http://localhost:8000 --keep
+Session: 550e8400-e29b-41d4-a716-446655440000 (use --session to resume)
+> hello
+hi there
+^C
+Bye!
+
+# Resume later
+motus serve chat http://localhost:8000 --session 550e8400-e29b-41d4-a716-446655440000
+> where were we?
+```
+
+---
+
+## motus serve health
+
+Check the health of a running server.
+
+```bash
+motus serve health <url>
+```
+
+Hits the `/health` endpoint and prints a summary of the server's current state.
+
+### Example
+
+```bash
+motus serve health http://localhost:8000
+```
+
+```
+Status: ok
+Workers: 2/4
+Total sessions: 2
+```
+
+---
+
+## Session management commands
+
+These commands map directly to the REST endpoints described in the [Sessions](/reference/api-sessions) and [Messages](/reference/api-messages) API references.
+
+### motus serve create
+
+Create a new session and print its ID.
+
+```bash
+motus serve create <url>
+```
+
+```bash
+motus serve create http://localhost:8000
+```
+
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "idle"
+}
+```
+
+### motus serve sessions
+
+List all active sessions.
+
+```bash
+motus serve sessions <url>
+```
+
+```bash
+motus serve sessions http://localhost:8000
+```
+
+```json
+[
+  {
+    "session_id": "550e8400-e29b-41d4-a716-446655440000",
+    "total_messages": 4,
+    "status": "idle"
+  }
+]
+```
+
+### motus serve get
+
+Get details for a session. Supports long-polling so you can block until a running turn completes.
+
+```bash
+motus serve get <url> <id> [options]
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--wait` | `false` | Block until the session is no longer `"running"` |
+| `--timeout` | — | Maximum seconds to wait (only applies with `--wait`) |
+
+```bash
+# Poll until complete, with a 30-second timeout
+motus serve get http://localhost:8000 550e8400-e29b-41d4-a716-446655440000 --wait --timeout 30
+```
+
+```json
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "idle",
+  "response": { "role": "assistant", "content": "hi there" }
+}
+```
+
+### motus serve delete
+
+Delete a session.
+
+```bash
+motus serve delete <url> <id>
+```
+
+```bash
+motus serve delete http://localhost:8000 550e8400-e29b-41d4-a716-446655440000
+Deleted session 550e8400-e29b-41d4-a716-446655440000
+```
+
+<Note>
+  It is safe to delete a session while a turn is running. The running task is cancelled and the worker process is killed immediately.
+</Note>
+
+### motus serve messages
+
+Retrieve the full conversation history for a session.
+
+```bash
+motus serve messages <url> <id>
+```
+
+```bash
+motus serve messages http://localhost:8000 550e8400-e29b-41d4-a716-446655440000
+```
+
+```json
+[
+  { "role": "user", "content": "hello" },
+  { "role": "assistant", "content": "hi there" }
+]
+```
+
+### motus serve send
+
+Send a message to an existing session. Returns immediately unless `--wait` is used.
+
+```bash
+motus serve send <url> <id> <message> [options]
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| `--role` | `user` | Message role: `system`, `user`, `assistant`, or `tool` |
+| `--wait` | `false` | Wait for the turn to complete and print the final session state |
+| `--timeout` | — | Maximum seconds to wait (only applies with `--wait`) |
+| `--webhook-url` | — | URL to POST the turn result to when it completes |
+| `--webhook-token` | — | Bearer token for the webhook `Authorization` header |
+| `--webhook-include-messages` | `false` | Include the full message history in the webhook payload |
+| `--param` | — | `KEY=VALUE` parameter passed to the agent as `user_params` (repeatable). Numeric values are auto-coerced to `int` or `float`. |
+
+```bash
+# Fire and forget
+motus serve send http://localhost:8000 550e8400-e29b-41d4-a716-446655440000 "hello"
+
+# Wait for the turn to finish
+motus serve send http://localhost:8000 550e8400-e29b-41d4-a716-446655440000 "hello" --wait
+
+# Send and deliver the result to a webhook
+motus serve send http://localhost:8000 550e8400-e29b-41d4-a716-446655440000 "hello" \
+  --webhook-url https://example.com/hook \
+  --webhook-token secret
+```

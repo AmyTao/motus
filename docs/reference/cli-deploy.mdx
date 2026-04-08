@@ -1,0 +1,102 @@
+---
+title: "motus deploy"
+description: "CLI reference for deploying agents to Motus Cloud. Authenticate, deploy from local files or a Git repository, and manage your cloud identity."
+---
+
+The `motus deploy` command group packages your agent and deploys it to Motus Cloud. Before deploying, you must authenticate with `motus login`.
+
+---
+
+## motus login
+
+Authenticate with Motus Cloud.
+
+```bash
+motus login
+```
+
+Opens a browser-based OAuth flow and stores your credentials in `~/.motus/credentials.json`. You only need to run this once — credentials persist across sessions.
+
+For CI environments where a browser is unavailable, set the `LITHOSAI_API_KEY` environment variable instead of running `motus login`. The environment variable takes precedence over the stored credential file.
+
+```bash
+export LITHOSAI_API_KEY=your-api-key
+motus deploy myapp:agent
+```
+
+---
+
+## motus deploy
+
+Package and deploy your agent to Motus Cloud.
+
+```bash
+motus deploy [OPTIONS] [import-path]
+```
+
+### Arguments and flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `import-path` | Read from `motus.toml` | Python import path to your agent in `module:variable` format (e.g., `myapp:agent`) |
+| `--name` | — | Project name. Creates a new project if none exists with this name. Mutually exclusive with `--project-id`. |
+| `--project-id` | Read from `motus.toml` | ID of an existing project to deploy to. Mutually exclusive with `--name`. |
+| `--git-url` | — | Git repository URL. When provided, the build service clones the repo instead of uploading local files. |
+| `--git-ref` | — | Branch, tag, or commit SHA to check out. Requires `--git-url`. |
+| `--secret` | — | `KEY=VALUE` secret injected into the agent container. Use `KEY` alone to read the value from your local environment. Repeatable. |
+
+<Note>
+  On your first deploy, you must provide either `--name` or `--project-id`. After a successful deploy, Motus writes `project_id`, `build_id`, and `import_path` to `motus.toml` in your project directory, so subsequent deploys can run without any flags.
+</Note>
+
+### How it works
+
+When you run `motus deploy`, it:
+
+1. Validates your import path by importing it locally.
+2. Resolves or creates the project using `--project-id` or `--name`.
+3. Packs your project files into a `.tar.zst` archive (skipping dotfiles, `__pycache__`, `.pyc`, virtualenvs, and `.gitignore`-excluded paths) and uploads them — or, for Git deploys, instructs the build service to clone the repository directly.
+4. Streams build status via SSE: `queued` → `building` → `built` → `deploying` → `deployed` → `healthy`.
+
+### Examples
+
+```bash
+# First deploy — create a new project named "my-project"
+motus deploy --name my-project myapp:agent
+
+# Subsequent deploy — reads project ID and import path from motus.toml
+motus deploy
+
+# Deploy with secrets
+motus deploy --secret OPENAI_API_KEY=sk-123 --secret DATABASE_URL
+
+# Deploy from a Git repository at a specific branch
+motus deploy --name my-project \
+  --git-url https://github.com/org/repo.git \
+  --git-ref main \
+  myapp:agent
+```
+
+---
+
+## motus whoami
+
+Print the identity associated with your current credentials.
+
+```bash
+motus whoami
+```
+
+Use this to confirm which account your CLI is authenticated as before deploying.
+
+---
+
+## motus logout
+
+Revoke your credentials and clear the local credential file.
+
+```bash
+motus logout
+```
+
+After logging out, `motus deploy` and other cloud commands will fail until you run `motus login` again (or set `LITHOSAI_API_KEY`).

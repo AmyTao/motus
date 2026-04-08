@@ -1,0 +1,88 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "LithosAI",
+  "logo": {
+    "light": "https://media.brand.dev/f796bb51-abb9-443b-9567-250121a46f5a.svg",
+    "dark": "https://media.brand.dev/f796bb51-abb9-443b-9567-250121a46f5a.svg"
+  },
+  "favicon": "https://media.brand.dev/c68ccc3e-e9a8-450a-872b-3d1f6ed92522.png",
+  "colors": {
+    "primary": "#140c0c",
+    "light": "#7c7c7c",
+    "dark": "#c0c0c0"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/lithos-ai/motus"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "getting-started/installation",
+              "getting-started/quickstart",
+              "getting-started/configuration"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/agents",
+              "concepts/tools",
+              "concepts/runtime",
+              "concepts/models",
+              "concepts/memory"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/serving",
+              "guides/deployment",
+              "guides/tracing",
+              "guides/guardrails",
+              "guides/mcp-integration",
+              "guides/multi-agent"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/openai-agents",
+              "integrations/anthropic-sdk",
+              "integrations/google-adk"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "CLI",
+            "pages": [
+              "reference/cli-serve",
+              "reference/cli-deploy"
+            ]
+          },
+          {
+            "group": "REST API",
+            "pages": [
+              "reference/api-sessions",
+              "reference/api-messages",
+              "reference/api-webhooks"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

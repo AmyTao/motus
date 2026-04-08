@@ -1,0 +1,82 @@
+---
+title: "Introduction"
+description: "Build, serve, and deploy AI agents at scale with Motus — higher capability, lower cost, faster agents."
+---
+
+Motus is an open-source agent serving framework that lets you build powerful AI agents and deploy them locally or to the cloud in a single command. The same code runs everywhere — no rewrites, no surprises.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/getting-started/quickstart">
+    Build and run your first agent in under 5 minutes.
+  </Card>
+  <Card title="Installation" icon="download" href="/getting-started/installation">
+    Install the Motus library and CLI with pip or uv.
+  </Card>
+  <Card title="Agents" icon="robot" href="/concepts/agents">
+    Learn how to build ReAct agents with tools, memory, and structured output.
+  </Card>
+  <Card title="Serving & Deployment" icon="server" href="/guides/serving">
+    Expose your agent as an HTTP API locally or deploy to the cloud.
+  </Card>
+</CardGroup>
+
+## Why Motus
+
+<CardGroup cols={2}>
+  <Card title="Multi-Provider Models" icon="layer-group" href="/concepts/models">
+    Switch between OpenAI, Anthropic, Gemini, and OpenRouter by changing one line.
+  </Card>
+  <Card title="Parallel Runtime" icon="bolt" href="/concepts/runtime">
+    Automatic task-graph parallelism — just decorate functions with `@agent_task`.
+  </Card>
+  <Card title="MCP Integration" icon="plug" href="/guides/mcp-integration">
+    Connect any MCP-compatible tool server in a single line.
+  </Card>
+  <Card title="Built-in Tracing" icon="chart-line" href="/guides/tracing">
+    Every LLM call and tool invocation traced automatically, no instrumentation needed.
+  </Card>
+</CardGroup>
+
+## Get started in 3 steps
+
+<Steps>
+  <Step title="Install Motus">
+    ```bash
+    pip install lithosai-motus
+    ```
+  </Step>
+  <Step title="Build your first agent">
+    ```python
+    from motus.agent import ReActAgent
+    from motus.models import OpenAIChatClient
+    from motus.tools import tool
+
+    @tool
+    async def greet(name: str) -> str:
+        """Greet someone by name."""
+        return f"Hello, {name}!"
+
+    client = OpenAIChatClient(api_key="sk-...")
+    agent = ReActAgent(client=client, model_name="gpt-4o", tools=[greet])
+    ```
+  </Step>
+  <Step title="Serve or deploy">
+    ```bash
+    # Run locally
+    motus serve start myapp:agent --port 8000
+
+    # Deploy to the cloud
+    motus deploy --name my-agent myapp:agent
+    ```
+  </Step>
+</Steps>
+
+## Supported frameworks
+
+Motus works out of the box with agents built using:
+
+- **Motus** native `ReActAgent`
+- **OpenAI Agents SDK** — drop-in import replacement
+- **Anthropic SDK** — `ToolRunner` adapter
+- **Google ADK** — native `Agent` subclass
+- **Plain Python** — any callable with the right signature
