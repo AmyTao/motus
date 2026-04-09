@@ -25,18 +25,27 @@ else
 	uv tool install lithosai-motus
 fi
 
-# -- Download skill files from GitHub ------------------------------------------
+# -- Download skill files from latest GitHub release ---------------------------
 
 tmp=${TMPDIR:-/tmp}/$product.$$
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp"
 
-curl -fsSL "https://github.com/$org/$repo/archive/main.tar.gz" | tar xz -C "$tmp"
-skill_src="$tmp/$repo-main/plugins/$product/skills/$product"
+tag=$(curl -fsSL "https://api.github.com/repos/$org/$repo/releases/latest" | \
+	grep '"tag_name"' | sed 's/.*: *"//;s/".*//')
+
+if [ -z "$tag" ]
+then
+	echo "Error: could not determine latest release" >&2
+	exit 1
+fi
+
+curl -fsSL "https://github.com/$org/$repo/archive/refs/tags/$tag.tar.gz" | tar xz -C "$tmp"
+skill_src="$tmp/$repo-${tag#v}/plugins/$product/skills/$product"
 
 if [ ! -d "$skill_src" ]
 then
-	echo "Error: skill not found in archive" >&2
+	echo "Error: skill not found in release $tag" >&2
 	exit 1
 fi
 
