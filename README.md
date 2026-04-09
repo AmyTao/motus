@@ -61,7 +61,7 @@ See [`plugins/motus/README.md`](plugins/motus/README.md) for marketplace install
 
 ## Serve & deploy any agent
 
-Install Motus to serve agents locally and deploy them to [Motus Cloud](http://console.lithosai.com/). Motus supports agents built with:
+Install Motus to serve agents locally and deploy them to [Motus Cloud](https://console.lithosai.cloud/). Motus supports agents built with:
 
 * Motus
 *  OpenAI Agents SDK
