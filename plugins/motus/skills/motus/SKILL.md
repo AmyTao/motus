@@ -1,5 +1,6 @@
 ---
 name: motus
+version: 0.1.0
 description: Build, configure, and deploy AI agents using the Motus framework. Use when user wants to create agents, define tools, set up workflows, configure memory or guardrails, or deploy agents locally or to the cloud. Triggers on mentions of motus, ReActAgent, agent_task, tool creation, MCP integration, motus deploy, motus serve.
 argument-hint: "[deploy [--name name] [import-path]] or [deploy [--project-id id] [import-path]] or [serve [import-path]] or [description of agent to build]"
 ---
@@ -678,4 +679,22 @@ Do not bother the user to file it themselves. Write the issue, show them the dra
 
 # Updates
 
-If any `motus` command prints a message matching `motus update available: ... Run: uv tool upgrade lithosai-motus`, run the upgrade command before continuing. This updates both the CLI and the plugin files for Codex, Cursor, and Gemini.
+## Skill update
+
+Before starting work, check whether this skill is up to date. This skill's version is in the `version` field of the YAML frontmatter above. Compare it against the latest GitHub release:
+
+```bash
+curl -s https://api.github.com/repos/lithos-ai/motus/releases/latest | grep '"tag_name"'
+```
+
+If the release tag is newer than this skill's version, update by running:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lithos-ai/motus/main/install.sh | sh
+```
+
+This updates both the CLI and the skill files. Continue after the update completes.
+
+## CLI update
+
+If any `motus` command prints a message matching `motus update available: ... Run: uv tool upgrade lithosai-motus`, run the upgrade command before continuing.
