@@ -28,6 +28,7 @@ docs/examples/*
 *.pptx
 node_modules
 !assets/*
+!docs/assets/*
 
 # Tracer Output
 traces/
