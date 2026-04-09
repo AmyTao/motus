@@ -1,9 +1,9 @@
 ---
-title: "Serving"
-description: "Expose any agent as an HTTP server with session-based conversations and process-per-request isolation."
+title: "Self-Managed"
+description: "Serve agents over HTTP with session-based conversations and per-request process isolation with a single command. "
 ---
 
-Expose any agent as an HTTP server with session-based conversations using `motus serve`. Each message spawns a fresh worker subprocess, so your agent runs in complete isolation — no shared state between requests, and a crash in one turn never affects another.
+The self-managed motus exposes any agent as an HTTP server with session-based conversations using `motus serve`. Each message spawns a fresh worker subprocess, so your agent runs in complete isolation. No shared state between requests, and a crash in one turn never affects another.
 
 ## Quick start
 
@@ -35,20 +35,20 @@ motus serve chat http://localhost:8000
 Every agent type follows the same turn contract: receive a `ChatMessage` and the session's prior state, return a response `ChatMessage` and updated state. All agent types run in worker subprocesses and must be importable from the module level.
 
 | Parameter | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `message` | `ChatMessage` | The new user message (constructed by the server from the HTTP request). |
 | `state` | `list[ChatMessage]` | The session's state from the previous turn (empty list on first turn). |
 
-**Return value**: `tuple[ChatMessage, list[ChatMessage]]` — the response message (surfaced to the HTTP client) and the updated state (stored in the session). The agent owns the state and can append, compact, or restructure it freely.
+**Return value**: `tuple[ChatMessage, list[ChatMessage]]` the response message (surfaced to the HTTP client) and the updated state (stored in the session). The agent owns the state and can append, compact, or restructure it freely.
 
 <Tabs>
   <Tab title="ServableAgent">
-    Any object with a conforming `run_turn` method can be served directly. This is a runtime-checkable `Protocol` — inheritance is not required.
+    Any object with a conforming `run_turn` method can be served directly. This is a runtime checkable. `Protocol`inheritance is not required.
 
     ```python
     from motus.serve import ServableAgent
     from motus.models.base import ChatMessage
-
+    
     class MyAgent(ServableAgent):
         async def run_turn(
             self,
@@ -66,7 +66,7 @@ Every agent type follows the same turn contract: receive a `ChatMessage` and the
 
     ```python
     from motus.google_adk.agents.llm_agent import Agent
-
+    
     agent = Agent(
         model="gemini-2.0-flash",
         name="my_agent",
@@ -85,12 +85,12 @@ Every agent type follows the same turn contract: receive a `ChatMessage` and the
 
     ```python
     from motus.anthropic import ToolRunner, beta_async_tool
-
+    
     @beta_async_tool
     async def get_weather(city: str) -> str:
         """Get the weather for a city."""
         return f"Sunny in {city}"
-
+    
     runner = ToolRunner(
         model="claude-sonnet-4-20250514",
         max_tokens=1024,
@@ -110,7 +110,7 @@ Every agent type follows the same turn contract: receive a `ChatMessage` and the
 
     ```python
     from agents import Agent
-
+    
     agent = Agent(
         name="my_agent",
         instructions="You are a helpful assistant.",
@@ -128,12 +128,12 @@ Every agent type follows the same turn contract: receive a `ChatMessage` and the
 
     ```python
     from motus.models.base import ChatMessage
-
+    
     # Sync
     def my_agent(message, state):
         response = ChatMessage.assistant_message(content="hello")
         return response, state + [message, response]
-
+    
     # Async
     async def my_agent(message, state):
         result = await some_api_call(message.content)
@@ -148,19 +148,19 @@ Every agent type follows the same turn contract: receive a `ChatMessage` and the
 Each conversation is a session. A session moves through the following states:
 
 | Status | Description |
-|--------|-------------|
+| --- | --- |
 | `idle` | Waiting for input. Initial state after creation. |
 | `running` | Processing a message. Concurrent sends are rejected with `409`. |
 | `error` | Agent raised an exception. The `error` field contains the message. |
 
-```
+```text
 idle ──POST /messages──▶ running ──success──▶ idle
                                └──failure──▶ error
 error ──POST /messages──▶ running
 ```
 
 <Note>
-A session in `error` state can receive new messages and transitions back to `running`. Sessions are held in memory and do not persist across server restarts.
+  A session in `error` state can receive new messages and transitions back to `running`. Sessions are held in memory and do not persist across server restarts.
 </Note>
 
 When `--ttl` is set, idle and errored sessions whose last activity exceeds the TTL are swept by a background task. When `--timeout` is set, agent turns that exceed the limit are killed and the session transitions to `error` with an `"Agent timed out"` message.
@@ -176,7 +176,7 @@ graph TD
     C --> DN["Process N (one-shot worker)"]
 ```
 
-Each message spawns a fresh subprocess via `multiprocessing.Process` with pipe-based IPC. An `asyncio.Semaphore` limits concurrency to `max_workers`. Processes are not reused — each one starts, runs the agent function, sends the result over the pipe, and exits. On timeout or cancellation, the process is killed immediately.
+Each message spawns a fresh subprocess via `multiprocessing.Process` with pipe-based IPC. An `asyncio.Semaphore` limits concurrency to `max_workers`. Processes are not reused: each one starts, runs the agent function, sends the result over the pipe, and exits. On timeout or cancellation, the process is killed immediately.
 
 This subprocess isolation model means:
 
@@ -185,20 +185,20 @@ This subprocess isolation model means:
 - Resource cleanup is automatic — when the process exits, all memory is reclaimed.
 
 <Accordion title="File structure">
-```
-serve/
-├── __init__.py       # Public exports: AgentServer, ServableAgent
-├── protocol.py       # ServableAgent runtime-checkable protocol
-├── server.py         # AgentServer class (FastAPI routes, background tasks)
-├── worker.py         # WorkerExecutor, subprocess execution, agent type dispatch
-├── schemas.py        # Pydantic models (SessionStatus, request/response types)
-├── session.py        # Session dataclass and in-memory SessionStore
-└── cli.py            # CLI (start, chat, health, create, sessions, get, delete, messages, send)
-```
+  ```text
+  serve/
+  ├── __init__.py       # Public exports: AgentServer, ServableAgent
+  ├── protocol.py       # ServableAgent runtime-checkable protocol
+  ├── server.py         # AgentServer class (FastAPI routes, background tasks)
+  ├── worker.py         # WorkerExecutor, subprocess execution, agent type dispatch
+  ├── schemas.py        # Pydantic models (SessionStatus, request/response types)
+  ├── session.py        # Session dataclass and in-memory SessionStore
+  └── cli.py            # CLI (start, chat, health, create, sessions, get, delete, messages, send)
+  ```
 </Accordion>
 
 <Tip>
-For detailed CLI usage and all available flags, see the [CLI reference for `motus serve`](/reference/cli-serve).
+  For detailed CLI usage and all available flags, see the [CLI reference for `motus serve`](/reference/cli-serve).
 </Tip>
 
 ## Server options
@@ -206,7 +206,7 @@ For detailed CLI usage and all available flags, see the [CLI reference for `motu
 Start options for `motus serve start`:
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--host` | `0.0.0.0` | Bind address |
 | `--port` | `8000` | Port |
 | `--workers` | CPU count | Max concurrent worker processes |
@@ -242,7 +242,7 @@ motus serve chat http://localhost:8000 --session 550e8400-e29b-41d4-a716-4466554
 ```
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `--session` | — | Resume an existing session instead of creating a new one |
 | `--keep` | `false` | Preserve the session on exit (prints session ID) |
 | `--param` | — | `KEY=VALUE` per-request parameter passed as `user_params` (repeatable) |
@@ -250,7 +250,7 @@ motus serve chat http://localhost:8000 --session 550e8400-e29b-41d4-a716-4466554
 ### Other commands
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `motus serve health <url>` | Check server status and worker counts |
 | `motus serve create <url>` | Create a new session |
 | `motus serve sessions <url>` | List all active sessions |
@@ -272,20 +272,20 @@ server.run(host="0.0.0.0", port=8000)
 
 **Constructor parameters** (all except `agent_fn` are keyword-only):
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `agent_fn` | `Callable \| str` | required | A `ServableAgent`, OpenAI Agent, callable, or import path string (e.g., `"myapp:my_agent"`) |
-| `max_workers` | `int \| None` | `None` | Max concurrent worker processes. Defaults to `os.cpu_count()`, fallback `4`. |
-| `ttl` | `float` | `0` | TTL for idle/error sessions in seconds. `0` disables expiry. |
-| `timeout` | `float` | `0` | Max seconds per turn before the worker is killed. `0` disables. |
-| `max_sessions` | `int` | `0` | Maximum concurrent sessions. `0` means unlimited. |
-| `shutdown_timeout` | `float` | `0` | Seconds to wait for in-flight tasks on shutdown. `0` waits indefinitely. |
-| `allow_custom_ids` | `bool` | `False` | Enable `PUT /sessions/{id}` for client-specified IDs. |
+| Parameter | Type | Default | Description |  |
+| --- | --- | --- | --- | --- |
+| `agent_fn` | \`Callable | str\` | required | A `ServableAgent`, OpenAI Agent, callable, or import path string (e.g., `"myapp:my_agent"`) |
+| `max_workers` | \`int | None\` | `None` | Max concurrent worker processes. Defaults to `os.cpu_count()`, fallback `4`. |
+| `ttl` | `float` | `0` | TTL for idle/error sessions in seconds. `0` disables expiry. |  |
+| `timeout` | `float` | `0` | Max seconds per turn before the worker is killed. `0` disables. |  |
+| `max_sessions` | `int` | `0` | Maximum concurrent sessions. `0` means unlimited. |  |
+| `shutdown_timeout` | `float` | `0` | Seconds to wait for in-flight tasks on shutdown. `0` waits indefinitely. |  |
+| `allow_custom_ids` | `bool` | `False` | Enable `PUT /sessions/{id}` for client-specified IDs. |  |
 
 **`run(host, port, log_level) -> None`** — starts the server (blocking).
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| --- | --- | --- | --- |
 | `host` | `str` | `"0.0.0.0"` | Bind address |
 | `port` | `int` | `8000` | Port |
 | `log_level` | `str` | `"info"` | Uvicorn log level |

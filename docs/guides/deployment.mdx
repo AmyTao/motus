@@ -1,5 +1,5 @@
 ---
-title: "Deployment"
+title: "Cloud Deployment"
 description: "Deploy agents to Motus Cloud with a single command."
 ---
 
@@ -15,12 +15,12 @@ motus login
 
 This opens a browser window for OAuth. Credentials are stored in `~/.motus/credentials.json`.
 
-In CI or other non-interactive environments, set the `LITHOSAI_API_KEY` environment variable instead — it overrides the credential file.
+In CI or other non-interactive environments, set the `LITHOSAI_API_KEY` environment variable instead it overrides the credential file.
 
 Other auth commands:
 
 | Command | Description |
-|---------|-------------|
+| --- | --- |
 | `motus whoami` | Check your current identity |
 | `motus logout` | Revoke your key and clear stored credentials |
 
@@ -128,12 +128,12 @@ You can commit `motus.toml` to version control so your team shares the same proj
 
 Full reference for `motus deploy`:
 
-```
+```text
 motus deploy [OPTIONS] [import-path]
 ```
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| --- | --- | --- |
 | `import-path` | from `motus.toml` | Python import path in `module:variable` format |
 | `--name` | — | Project name — creates a new project if one does not exist |
 | `--project-id` | from `motus.toml` | Target an existing project by ID |
@@ -149,7 +149,7 @@ When packaging local files, Motus applies a three-layer ignore strategy:
 
 1. **Dotfiles** are always excluded — `.env`, `.git/`, `.vscode/`, and any other file or directory whose name begins with `.`.
 2. **Default patterns** exclude common build artifacts:
-   ```
+   ```text
    __pycache__/
    *.pyc
    *venv*/
