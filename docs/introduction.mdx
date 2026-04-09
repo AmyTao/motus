@@ -116,9 +116,9 @@ motus deploy my-project myapp:agent
 - **Multi-provider models** — unified client for OpenAI, Anthropic, Gemini, and OpenRouter; switch providers by changing one line
 - **Persistent memory** — basic and compaction strategies with boundary-aware auto-compaction and session restore
 
-## Serve & deploy any agent
+## Self-managed agent-serving & cloud deployment
 
-Motus serves and deploys agents from any framework. Install, serve locally, deploy to the cloud:
+Motus support quick self-managed agent-serving and easy cloud deployment
 
 <Steps>
   <Step title="Install Motus">
@@ -126,7 +126,7 @@ Motus serves and deploys agents from any framework. Install, serve locally, depl
     uv add lithosai-motus
     ```
   </Step>
-  <Step title="Serve locally">
+  <Step title="Self-managed  Agent Serving">
     ```bash
     motus serve start myapp:agent --port 8000
     motus serve chat http://localhost:8000 "Hello!"
