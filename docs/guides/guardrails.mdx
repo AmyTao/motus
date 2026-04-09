@@ -3,11 +3,11 @@ title: "Guardrails"
 description: "Validate or transform agent inputs and outputs before and after execution using plain Python functions."
 ---
 
-Guardrails are plain Python functions — no base class, no registration DSL. Attach them to agents or individual tools to validate, transform, or block inputs and outputs. Three conventions govern every guardrail:
+Guardrails are plain Python functions  no base class, no registration DSL. Attach them to agents or individual tools to validate, transform, or block inputs and outputs. Three conventions govern every guardrail:
 
 - **Return `None`** (or nothing) — pass through unchanged.
-- **Return a value** (`str`, `dict`, or the appropriate type) — replace or update the input/output.
-- **Raise an exception** — block execution entirely.
+- **Return a value** (`str`, `dict`, or the appropriate type) replace or update the input/output.
+- **Raise an exception** block execution entirely.
 
 Both sync and async guardrail functions are supported. Sync functions run on a background thread via `asyncio.to_thread`.
 
@@ -151,7 +151,7 @@ agent = ReActAgent(
 ## Where to attach guardrails
 
 | Level | How | Parameters |
-|-------|-----|------------|
+| --- | --- | --- |
 | Single tool | `@tool(...)` or `FunctionTool(...)` | `input_guardrails`, `output_guardrails` |
 | Tool collection | `@tools(...)` on the class | `input_guardrails`, `output_guardrails` |
 | Agent | `ReActAgent(...)` | `input_guardrails`, `output_guardrails` |
@@ -163,7 +163,7 @@ For tool collections, method-level `@tool` guardrails override class-level defau
 All guardrail exceptions inherit from `GuardrailTripped`:
 
 | Exception | Where it applies |
-|-----------|-----------------|
+| --- | --- |
 | `InputGuardrailTripped` | Agent input guardrails |
 | `OutputGuardrailTripped` | Agent output guardrails |
 | `ToolInputGuardrailTripped` | Tool input guardrails |

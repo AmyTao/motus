@@ -41,7 +41,7 @@ After a run, `TraceManager.export_trace()` writes the following files to the out
 
 ## Lifecycle hooks
 
-Tracing is built on `HookManager`. You can register callbacks at three levels of specificity — global (every task), per-name (a specific function or tool), and per-type (all tool calls or all model calls).
+Tracing is built on `HookManager`. You can register callbacks at three levels of specificity  global (every task), per-name (a specific function or tool), and per-type (all tool calls or all model calls).
 
 ### Registering hooks
 
@@ -121,17 +121,17 @@ config = TraceConfig(
 )
 ```
 
-| Field | Type | Default | Description |
-| --- | --- | --- | --- |
-| `collection_level` | `CollectionLevel` | from env | What data to collect |
-| `export_enabled` | `bool` | from env | Write trace files on export |
-| `online_tracing` | `bool` | from env | Start a local SSE viewer |
-| `log_dir` | `Path` | `traces/trace_<ts>/` | Output directory |
-| `json_path` | `str` | `"tracer_state.json"` | JSON state filename |
-| `cloud_api_url` | `str | None` | from credentials | Cloud API endpoint |
-| `cloud_api_key` | `str | None` | from credentials | Cloud API key |
-| `project` | `str | None` | `MOTUS_PROJECT` / `motus.toml` | Project tag for cloud traces |
-| `build` | `str | None` | `MOTUS_BUILD` / `motus.toml` | Build tag for cloud traces |
+| Field | Type | Default | Description |  |
+| --- | --- | --- | --- | --- |
+| `collection_level` | `CollectionLevel` | from env | What data to collect |  |
+| `export_enabled` | `bool` | from env | Write trace files on export |  |
+| `online_tracing` | `bool` | from env | Start a local SSE viewer |  |
+| `log_dir` | `Path` | `traces/trace_<ts>/` | Output directory |  |
+| `json_path` | `str` | `"tracer_state.json"` | JSON state filename |  |
+| `cloud_api_url` | \`str | None\` | from credentials | Cloud API endpoint |
+| `cloud_api_key` | \`str | None\` | from credentials | Cloud API key |
+| `project` | \`str | None\` | `MOTUS_PROJECT` / `motus.toml` | Project tag for cloud traces |
+| `build` | \`str | None\` | `MOTUS_BUILD` / `motus.toml` | Build tag for cloud traces |
 
 ## Self-managed Agent tracing
 
