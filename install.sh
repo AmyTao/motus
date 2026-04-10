@@ -62,6 +62,15 @@ if command -v claude >/dev/null 2>&1
 then
 	claude plugin marketplace add "$org/$repo" 2>/dev/null || true
 	claude plugin install "$product@LithosAI" 2>/dev/null || true
+	python3 -c "
+import json; from pathlib import Path
+p = Path.home() / '.claude/plugins/known_marketplaces.json'
+if p.exists():
+    d = json.loads(p.read_text())
+    if 'LithosAI' in d:
+        d['LithosAI']['autoUpdate'] = True
+        p.write_text(json.dumps(d, indent=2) + '\n')
+" 2>/dev/null || true
 	add_installed "Claude Code"
 else
 	add_skipped "Claude Code"
