@@ -54,6 +54,7 @@
               "guides/guardrails",
               "guides/mcp-integration",
               "guides/multi-agent",
+              "guides/human-in-the-loop",
               "guides/plugin",
               "guides/untitled-page"
             ]
