@@ -37,7 +37,7 @@ Agentic inference is exploding. Motus is an open-source agent serving project th
 
 The fastest way to get started is to let your coding agent handle building, serving, and deploying with Motus.
 
-Motus works out of the box with any coding agent (e.g., Claude Code, Codex, or Cursor). Install the plugin with one command:
+Motus works out of the box with any coding agent (e.g., Claude Code, Codex, or Cursor). Install the plugin and CLI with one command:
 
 ```sh
 curl -fsSL https://www.lithosai.com/motus/install.sh | sh
@@ -69,7 +69,7 @@ Install Motus to serve agents locally and deploy them to [Motus Cloud](https://c
 *  Google ADK
 *  Plain Python
 
-### Install the Motus Python library and CLI tool
+### Install Motus in your project
 
 Using uv:
 

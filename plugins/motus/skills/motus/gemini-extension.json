@@ -1,0 +1,13 @@
+{
+  "name": "motus",
+  "version": "0.2.0",
+  "description": "Build, configure, and deploy AI agents using the Motus framework.",
+  "contextFileName": [
+    "SKILL.md",
+    "REFERENCE.md",
+    "PATTERNS.md",
+    "EXAMPLES.md",
+    "DEPLOY-REFERENCE.md",
+    "POST-DEPLOY.md"
+  ]
+}
