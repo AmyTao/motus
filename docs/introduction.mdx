@@ -33,7 +33,7 @@ Deploy locally or to the cloud in one command. Same code, any scale.
     async def lookup(query: str) -> str:
         """Look up information about a topic."""
         return f"Result for: {query}"
-    
+
     agent = ReActAgent(client, "gpt-4o", tools=[lookup])
     response = await agent("What can you tell me about Motus?")
     ```
@@ -42,10 +42,10 @@ Deploy locally or to the cloud in one command. Same code, any scale.
     ```python
     @agent_task(retries=3, timeout=10.0)
     async def fetch(url): ...
-    
+
     @agent_task
     async def summarize(text_a, text_b): ...
-    
+
     # No DAG definition, no edge wiring — motus infers the graph from data flow.
     a = fetch("https://source-a.com")  # ╮
     b = fetch("https://source-b.com")  # ├─ parallel (independent args)
@@ -160,7 +160,7 @@ Motus integrates with existing agent SDKs. Bring your OpenAI Agents or Claude Ag
   <Tab title="OpenAI Agents SDK">
     ```python
     from motus.openai_agents import Agent, Runner
-    
+
     agent = Agent(name="my-agent", instructions="You are helpful.")
     result = await Runner.run(agent, "Hello!")
     ```
@@ -168,14 +168,16 @@ Motus integrates with existing agent SDKs. Bring your OpenAI Agents or Claude Ag
   <Tab title="Claude Agent SDK">
     ```python
     from motus.claude_agent import query
-    
+
     async for message in query(prompt="Summarize this document."):
         print(message)
     ```
   </Tab>
 </Tabs>
 
-See [OpenAI Agents integration](/integrations/openai-agents) and [Claude Agent integration](/integrations/claude-agent) for details.
+See [OpenAI Agents integration](/integrations/openai-agents),
+[Anthropic SDK integration](/integrations/anthropic-sdk), and
+[Google ADK integration](/integrations/google-adk) for details.
 
 ## Learn More
 

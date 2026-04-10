@@ -3,7 +3,9 @@ title: "Anthropic SDK"
 description: "Use your existing Anthropic SDK code with Motus serving and tracing. Define tools, create a ToolRunner, and deploy."
 ---
 
-Use the Anthropic SDK's Beta Tool Runner through Motus to get full tracing and HTTP serving with a single import. Define your tools, create a `ToolRunner`, and serve it — no changes to how you write tool logic.
+Use the Anthropic SDK's Beta Tool Runner through Motus to get full tracing and
+HTTP serving with a single import. Define your tools, create a `ToolRunner`,
+and serve it.
 
 ## Installation
 
@@ -21,7 +23,8 @@ Use the Anthropic SDK's Beta Tool Runner through Motus to get full tracing and H
 </Tabs>
 
 <Note>
-  The Anthropic SDK is a core dependency of Motus. The `motus.anthropic` module is available in all Motus installations — no extra install flag is required. You need `anthropic>=0.49.0` for tool runner support.
+  The Anthropic SDK is a core dependency of Motus. You need `anthropic>=0.49.0`
+  for tool runner support.
 </Note>
 
 ## Basic usage
@@ -44,7 +47,9 @@ runner = ToolRunner(
 )
 ```
 
-`ToolRunner` holds your model configuration and tool list. It creates a fresh `BetaAsyncToolRunner` on each turn — tool runners are single-use generators that cannot be re-iterated, so `ToolRunner` handles that lifecycle for you.
+`ToolRunner` holds your model configuration and tool list. It creates a fresh
+`BetaAsyncToolRunner` on each turn. Tool runners are single-use generators that
+cannot be re-iterated, so `ToolRunner` handles that lifecycle for you.
 
 ### Tool types
 
@@ -87,21 +92,35 @@ runner = ToolRunner(
 )
 ```
 
-## Serving
+## Deployment
+
+### Local serving
 
 Pass the `runner` object directly to `motus serve start`:
 
 ```bash
-motus serve start myapp:runner
+motus serve start myapp:runner --port 8000
 ```
 
 Where `runner` is a `ToolRunner` instance defined at module level in `myapp.py`.
+
+### Cloud deployment
+
+```bash
+cd my_project
+motus deploy --name my-agent tools_runner:runner
+```
+
+When deploying to Motus cloud, include `requirements.txt` with `anthropic>=0.49.0` (the SDK is not in the base image). No API key secrets are needed - the platform routes Anthropic API calls through the model proxy.
+
+Session state (conversation history) is persisted in DynamoDB and survives backend restarts, failovers, and scaling events.
 
 ### State management
 
 Motus manages conversation state across turns. Each turn receives the full prior conversation as a list of `ChatMessage` objects. `ToolRunner` converts that state into Anthropic message format and prepends it to every request, so the model always sees the full conversation context.
 
-You do not need to manage history yourself — Motus passes prior state in and stores the updated state after each turn automatically.
+You do not need to manage history yourself. Motus passes prior state in and
+stores the updated state after each turn automatically.
 
 ```python
 # myapp.py
@@ -146,7 +165,7 @@ All `model_call` and `tool_call` spans are parented to the root `agent_call` spa
 
 | Export | Description |
 |---|---|
-| `ToolRunner` | Motus serve adapter — holds config and creates a fresh runner per turn |
+| `ToolRunner` | Motus serve adapter which holds config and creates a fresh runner per turn |
 | `beta_async_tool` | Decorator for async tool functions |
 | `beta_tool` | Decorator for sync tool functions |
 | `BetaAsyncFunctionTool` | Anthropic SDK async function tool type |

@@ -49,9 +49,11 @@ Install optional extras to use Motus alongside other agent frameworks:
     uv sync --extra openai-agents
     ```
   </Tab>
-  <Tab title="Claude Agent SDK">
+  <Tab title="Anthropic SDK">
+    The Anthropic SDK is included as a core dependency. Upgrade if needed:
+
     ```bash
-    uv sync --extra claude-agent-sdk
+    uv pip install "anthropic>=0.49.0"
     ```
   </Tab>
   <Tab title="Google ADK">
