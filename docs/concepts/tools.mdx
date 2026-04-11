@@ -36,7 +36,7 @@ agent = ReActAgent(
 Motus reads the name, the docstring, and the type hints and builds the JSON Schema the LLM sees. Sync and async functions both work.
 
 <Tip>
-  Type annotations on parameters are required. Motus uses them to build the schema, and the model uses the schema to decide how to call your tool. A function with no annotations will not be accepted as a tool.
+  Add type annotations to your parameters. Motus turns them into the JSON Schema the model uses to call your tool. Any parameter without a type hint is silently left out of the schema, so the model has no way to know about it or pass a value for it. The function will still work as a tool, but only its annotated parameters are reachable from the model side.
 </Tip>
 
 ## The `@tool` decorator
