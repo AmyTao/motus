@@ -13,7 +13,7 @@ Motus gives you two ways to write an agent, and both run on the same underlying 
   <Card title="ReActAgent" icon="robot" href="/concepts/agents">
     For exploratory, open-ended problems. The model decides what to do next. You hand `ReActAgent` a client, a set of tools, and a system prompt. It calls the model, runs any tool calls the model asks for, feeds the results back, and loops until the model returns a final answer.
   </Card>
-  <Card title="Workflow" icon="diagram-project" href="/concepts/runtime">
+  <Card title="Workflow" icon="diagram-project" href="/concepts/workflow">
     For stable control over a known-good procedure. You decide what to do next. Decorate plain Python functions with `@agent_task`, call them, and Motus turns the data flow between them into a parallel task graph. No DAG wiring, no YAML.
   </Card>
 </CardGroup>
@@ -73,25 +73,24 @@ Both programming models run on the same task scheduler. When a `ReActAgent` call
 
 ### Workflow
 
-- [`@agent_task`](/concepts/runtime): decorate any sync or async Python function
-- [`AgentFuture`](/concepts/runtime): dependency tracking through function arguments, non-blocking operators
-- [`resolve()`](/concepts/runtime): block on or await a future
-- [Retries, timeouts, and policy overrides](/concepts/runtime): per-task and per-call
-- [Multi-return and per-task hooks](/concepts/runtime): `num_returns`, `on_start`, `on_end`
+- [`@agent_task`](/concepts/workflow): decorate any sync or async Python function
+- [`AgentFuture`](/concepts/workflow): dependency tracking through function arguments, non-blocking operators
+- [`resolve()`](/concepts/workflow): block on or await a future
+- [Retries, timeouts, and policy overrides](/concepts/workflow): per-task and per-call
+- [Multi-return and per-task hooks](/concepts/workflow): `num_returns`, `on_start`, `on_end`
 
-### Runtime
+### Runtime, serving, and tracing
 
-- [`GraphScheduler`](/concepts/runtime): parallel dispatch, thread pool for sync tasks, event loop for async tasks
-- [Lifecycle hooks](/guides/tracing): global, per-task-name, and per-task-type
-- [Tracing](/guides/tracing): opt-in via one environment variable, HTML viewer, OpenTelemetry export
+- [Runtime](/concepts/workflow#how-the-runtime-runs-it): the task scheduler underneath both programming models (`GraphScheduler`, thread pool, event loop)
 - [Serving](/guides/serving): `motus serve` locally, `motus deploy` to Motus Cloud, session-based REST API
+- [Tracing](/guides/tracing): opt-in via one environment variable, lifecycle hooks, HTML viewer, OpenTelemetry export
 
 ## Where to go next
 
 Pick a starting point based on what you want to build.
 
 - **A single LLM-driven assistant.** Start with [Agents](/concepts/agents), then [Tools](/concepts/tools), then [Memory](/concepts/memory).
-- **A parallel pipeline or batch job.** Start with [Runtime](/concepts/runtime). Circle back to [Agents](/concepts/agents) if any step needs an LLM.
+- **A parallel pipeline or batch job.** Start with [Workflow](/concepts/workflow). Circle back to [Agents](/concepts/agents) if any step needs an LLM.
 - **A team of agents.** See [Multi-agent](/guides/multi-agent) for how `as_tool()` turns one agent into a tool for another.
 - **An agent that needs external tools.** See [MCP Integration](/guides/mcp-integration) to plug in any MCP server.
 - **An existing agent from another framework.** See the [Integrations](/integrations/openai-agents) tab for OpenAI Agents SDK, Anthropic SDK, and Google ADK adapters.

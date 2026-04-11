@@ -1,17 +1,16 @@
 ---
-title: "Runtime"
+title: "Workflow"
 description: "Turn Python functions into a parallel task graph with @agent_task and AgentFuture."
 ---
 
-The Motus runtime turns ordinary Python into a task graph. Decorate a function with `@agent_task`, call it, and you get back an `AgentFuture` instead of a concrete value. Pass futures as arguments to express dependencies — Motus infers the graph and schedules everything automatically.
+A Workflow is a graph of `@agent_task`-decorated Python functions. You write ordinary Python; Motus infers the data-flow dependencies between your functions and runs the graph in parallel underneath. No DAG definitions, no edge declarations, no YAML.
 
-No DAG definitions. No edge declarations. No YAML.
+Reach for Workflow when the procedure is already a solved problem and you want stable, repeatable control over it: ETL pipelines, evaluation harnesses, content processing, batch LLM jobs. For open-ended, exploratory problems where you want the model to decide what to do next, use a [ReActAgent](/concepts/agents) instead. The two can be combined: a workflow step can call a `ReActAgent` for a subtask, and a `ReActAgent`'s model and tool calls are themselves `@agent_task`s submitted to the same scheduler.
 
 ## Basic example
 
 ```python
-from motus.runtime import resolve, shutdown
-from motus.runtime.agent_task import agent_task
+from motus.runtime import agent_task, resolve, shutdown
 
 @agent_task
 def add(a, b):
@@ -22,7 +21,7 @@ def multiply(x, y):
     return x * y
 
 a = add(3, 4)        # returns AgentFuture, not 7
-b = multiply(a, 10)  # depends on a — runs after a completes
+b = multiply(a, 10)  # depends on a, runs after a completes
 print(resolve(b))    # 70
 
 shutdown()
@@ -68,12 +67,12 @@ total = x + 100       # AgentFuture, not blocking
 doubled = x * 2       # AgentFuture, extends the DAG
 
 data = make_data()
-first = data["scores"][0]  # chained getitem — two new futures
+first = data["scores"][0]  # chained getitem, two new futures
 ```
 
-`total = x + 100` does not wait for `x` to resolve — it creates a new node in the DAG that executes when `x` is ready. You write normal Python; Motus builds the execution plan.
+`total = x + 100` does not wait for `x` to resolve. It creates a new node in the DAG that executes when `x` is ready. You write normal Python; Motus builds the execution plan.
 
-Ordering comparisons (`>`, `<`, `>=`, `<=`) also return futures. Equality (`==`) and hashing (`hash()`) are sync barriers that block to resolve the value — see the [critical constraint](#critical-constraint) below.
+Ordering comparisons (`>`, `<`, `>=`, `<=`) also return futures. Equality (`==`) and hashing (`hash()`) are sync barriers that block to resolve the value. See the [critical constraint](#critical-constraint) below.
 
 ## Retries and timeouts
 
@@ -152,7 +151,7 @@ class DataProcessor:
         return value * self.multiplier
 
 proc = DataProcessor(3)
-result = proc.process(10)  # AgentFuture — resolves to 30
+result = proc.process(10)  # AgentFuture, resolves to 30
 ```
 
 When accessed through an instance, `@agent_task` binds `self` automatically, matching the behavior of regular Python methods.
@@ -187,7 +186,7 @@ init()
 
 # ... run tasks ...
 
-# Clean shutdown — waits for in-flight tasks, stops the event loop
+# Clean shutdown: waits for in-flight tasks, stops the event loop
 shutdown()
 ```
 
@@ -195,16 +194,24 @@ shutdown()
 
 `is_initialized()` returns `True` if the runtime is running.
 
+## How the runtime runs it
+
+Under the hood, every `@agent_task` call is submitted to `GraphScheduler`, a small task scheduler that lives in its own thread and drives an async event loop. Sync tasks run on a `ThreadPoolExecutor`; async tasks run directly on that event loop. The scheduler tracks dependencies through `AgentFuture` objects and dispatches each task as soon as its prerequisites are ready.
+
+The same scheduler backs `ReActAgent`. Every model call and tool call inside a reasoning loop is wrapped as an `@agent_task` and submitted to `GraphScheduler`, which is why both programming models share retries, timeouts, cancellation, and tracing uniformly. It is also why `ReActAgent`'s independent tool calls actually run in parallel.
+
+You normally never touch `GraphScheduler` or `AgentRuntime` directly. The decorator is the API.
+
 ## Critical constraint
 
 <Warning>
-Never put an `AgentFuture` in a `set()` or use it as a dictionary key. The `__eq__` and `__hash__` methods on `AgentFuture` are **sync barriers** — they block the calling thread to resolve the underlying value. Inside an `@agent_task`, this deadlocks the runtime event loop.
+Never put an `AgentFuture` in a `set()` or use it as a dictionary key. The `__eq__` and `__hash__` methods on `AgentFuture` are **sync barriers**: they block the calling thread to resolve the underlying value. Inside an `@agent_task`, this deadlocks the runtime event loop.
 
 ```python
-# WRONG — will deadlock
+# WRONG: will deadlock
 futures = {add(1, 2), add(3, 4)}
 
-# CORRECT — key by object identity
+# CORRECT: key by object identity
 futures = {}
 f = add(1, 2)
 futures[id(f)] = f
