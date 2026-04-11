@@ -3,13 +3,14 @@ title: "Tools"
 description: "Give your agent the ability to do things: call functions, run shell commands, query an MCP server, or delegate to another agent."
 ---
 
-A tool is anything a `ReActAgent` can call to do something outside the LLM. Motus turns all of these into a single uniform interface the model can pick from by name:
+A tool is any Python callable a `ReActAgent` can invoke to do something outside the LLM. In practice that means:
 
 - A plain Python function
 - A method on a class
-- A Docker sandbox (with `python` and `sh` as callable tools)
-- Another agent
-- An MCP server
+- Another agent (wrapped as a callable)
+- A method exposed by an MCP server
+
+Pass any of these into `tools=[...]` and the agent sees them as named, schema-typed functions it can call by name.
 
 ## Functions are tools
 
@@ -231,9 +232,12 @@ Pass `skills_dir="..."` to add a `load_skill` tool that lets the agent load self
 
 ## Sandboxed execution
 
-A `Sandbox` in Motus is an execution environment with a lifecycle: you create it, the agent runs commands in it, and you close it when you're done. Motus ships `DockerSandbox`, which runs everything inside a container so the agent can't touch your host.
+A `Sandbox` in Motus is an execution environment that the built-in tools run inside: you create it, the tools bound to it execute commands there, and you close it when you're done. It is not a tool itself; it is the place tools run. Two implementations ship with Motus:
 
-By default, `builtin_tools()` runs commands on your local machine through `LocalShell`. To isolate execution, create a `DockerSandbox` and pass it in:
+- `LocalShell`, the default, runs commands directly on your host machine.
+- `DockerSandbox` runs everything inside a container, so a rogue command cannot touch your host.
+
+`builtin_tools()` uses `LocalShell` when you do not pass anything. To isolate execution, create a `DockerSandbox` and hand it in:
 
 ```python
 from motus.tools import builtin_tools, DockerSandbox
@@ -248,18 +252,7 @@ with DockerSandbox.create(image="python:3.12") as sandbox:
     await agent("...")
 ```
 
-A `Sandbox` is also a tool collection in its own right. It exposes `python` and `sh` methods that the agent can call directly, so you can skip `builtin_tools()` and pass the sandbox on its own:
-
-```python
-with DockerSandbox.create(image="python:3.12") as sandbox:
-    agent = ReActAgent(
-        client=OpenAIChatClient(),
-        model_name="gpt-4o",
-        tools=[sandbox],
-    )
-```
-
-For a managed sandbox with mounts, ports, or a pre-built image, use the `get_sandbox()` factory. It reuses a single global provider under the hood so repeated calls do not spin up new containers.
+For a managed sandbox with mounts, ports, or a pre-built image, use the `get_sandbox()` factory. It reuses a single global provider under the hood, so repeated calls do not spin up new containers.
 
 ## MCP tools
 
@@ -348,5 +341,4 @@ A quick reference for how to pass each kind of tool to an agent.
 | A class with methods | `tools=[MyClass()]` (class decorated with `@tools`) |
 | An instance you don't own | `tools=[tools(instance, allowlist={"get"})]` |
 | An MCP server | `tools=[session]` (from `get_mcp(...)`) |
-| A Docker sandbox | `tools=[sandbox]` |
 | Another agent | `tools=[other_agent]` or `other_agent.as_tool(...)` |
