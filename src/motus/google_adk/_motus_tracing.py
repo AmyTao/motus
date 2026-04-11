@@ -8,6 +8,7 @@ in the motus trace viewer, Jaeger export, and analytics pipeline.
 
 from __future__ import annotations
 
+import datetime
 import json
 import logging
 from typing import Any
@@ -42,6 +43,14 @@ def _span_time_us(span, attr: str) -> int:
     return ns // 1000
 
 
+def _ns_to_iso(ns: int) -> str:
+    """Convert nanoseconds since epoch to ISO 8601 string."""
+    if not ns:
+        return ""
+    dt = datetime.datetime.fromtimestamp(ns / 1e9, tz=datetime.timezone.utc)
+    return dt.isoformat()
+
+
 def _get_attr(span, key: str, default=None):
     """Safely get a span attribute."""
     attrs = getattr(span, "attributes", None) or {}
@@ -62,6 +71,30 @@ def _parse_json_attr(span, key: str) -> dict | list | None:
 class MotusSpanProcessor:
     """Receives OTEL spans from Google ADK and forwards them to motus TraceManager.
 
+    Google ADK's OTEL hierarchy includes internal spans (without
+    ``gen_ai.operation.name``) between ``invoke_agent`` and
+    ``generate_content``::
+
+        [internal runner span]          ← no gen_ai.operation.name
+        └── invoke_agent
+            └── [internal span]         ← no gen_ai.operation.name
+                └── generate_content
+                    ├── execute_tool
+                    └── execute_tool
+
+    This processor collapses the non-ADK intermediate spans so that the
+    ADK hierarchy is preserved cleanly::
+
+        agent_call
+        └── model_call
+            ├── tool_call
+            └── tool_call
+
+    Non-ADK spans are tracked for parent-chain resolution but never
+    ingested.  When a non-ADK span ends (after all its children), any
+    children that pointed to it are re-parented to its own parent via
+    ``update_external_span``.
+
     Usage::
 
         from google.adk.telemetry.setup import OTelHooks, maybe_set_otel_providers
@@ -72,29 +105,60 @@ class MotusSpanProcessor:
 
     def __init__(self, trace_manager) -> None:
         self._tm = trace_manager
+        # OTEL span_id → pre-allocated motus task_id.
+        self._span_id_map: dict[int, int] = {}
+        # motus task_id → list of child motus task_ids.  Used to re-parent
+        # children when a non-ADK intermediate span ends.
+        self._children: dict[int, list[int]] = {}
 
     def on_start(self, span, parent_context=None) -> None:
-        pass  # We process on end when all attributes are populated
+        """Pre-allocate a motus task_id and record the OTEL→motus mapping."""
+        ctx = getattr(span, "context", None)
+        if ctx is not None:
+            self._span_id_map[ctx.span_id] = self._tm.allocate_external_task_id()
 
     def on_end(self, span) -> None:
         """Convert a completed OTEL span to motus task_meta and ingest."""
         if not self._tm.config.is_collecting:
             return
 
+        ctx = getattr(span, "context", None)
+        otel_span_id = ctx.span_id if ctx else None
+        task_id = self._span_id_map.pop(otel_span_id, None) if otel_span_id else None
+
+        # Resolve OTEL parent → motus task_id
+        parent_ctx = getattr(span, "parent", None)
+        parent_task_id = (
+            self._span_id_map.get(parent_ctx.span_id) if parent_ctx else None
+        )
+
         op = _get_attr(span, _OP_NAME)
-        if op is None:
-            return  # Not an ADK span
+        if op is None or _get_attr(span, _TOOL_NAME) == "(merged tools)":
+            # Non-ADK intermediate span (e.g. gRPC/GenAI SDK internals)
+            # or synthetic "(merged tools)" batch span — skip ingestion.
+            # Collapse: re-parent any children that resolved to this span's
+            # task_id so they point to this span's own parent instead.
+            # Safe because OTEL guarantees children end before parents.
+            if task_id is not None:
+                for child_id in self._children.pop(task_id, []):
+                    self._tm.update_external_span(child_id, {"parent": parent_task_id})
+                    if parent_task_id is not None:
+                        self._children.setdefault(parent_task_id, []).append(child_id)
+            return
 
         task_type, func_name = self._classify(span, op)
+
+        start_ns = getattr(span, "start_time", None) or 0
+        end_ns = getattr(span, "end_time", None) or 0
 
         meta: dict[str, Any] = {
             "func": func_name,
             "task_type": task_type,
-            "parent": None,  # OTEL parent resolution handled below
-            "started_at": "",
-            "start_us": _span_time_us(span, "start_time"),
-            "ended_at": "",
-            "end_us": _span_time_us(span, "end_time"),
+            "parent": parent_task_id,
+            "started_at": _ns_to_iso(start_ns),
+            "start_us": start_ns // 1000 if start_ns else 0,
+            "ended_at": _ns_to_iso(end_ns),
+            "end_us": end_ns // 1000 if end_ns else 0,
             "adk_operation": op,
         }
 
@@ -104,15 +168,18 @@ class MotusSpanProcessor:
             meta["error"] = error_type
 
         self._enrich_meta(meta, span, op)
-        self._tm.ingest_external_span(meta)
+        self._tm.ingest_external_span(meta, task_id=task_id)
+
+        # Track as child of parent so non-ADK ancestors can re-parent us
+        if parent_task_id is not None and task_id is not None:
+            self._children.setdefault(parent_task_id, []).append(task_id)
 
     def shutdown(self) -> None:
-        pass
+        self._span_id_map.clear()
+        self._children.clear()
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         return True
-
-    # ── internal helpers ──
 
     @staticmethod
     def _classify(span, op: str) -> tuple[str, str]:
