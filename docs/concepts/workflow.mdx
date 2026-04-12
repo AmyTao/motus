@@ -84,7 +84,7 @@ If a task exhausts its retries, the final exception propagates out of the future
 
 ## Multi-return
 
-When a task produces multiple independent outputs, use `num_returns` to split them into separate futures. Downstream tasks can depend on individual outputs without waiting on the others.
+When a task produces multiple independent outputs, use `num_returns` to split them into separate futures.
 
 ```python
 @agent_task(num_returns=2)
@@ -112,11 +112,11 @@ Override the default policy for one invocation without touching the decorator.
 result = download.policy(retries=5, timeout=30)("https://api.example.com")
 ```
 
-`.policy()` returns a fresh `AgentTaskDefinition` with the updated fields. The original definition is unchanged. You can override `retries`, `timeout`, `retry_delay`, and `num_returns`.
+`.policy()` gives you a one-off variant of the task with different settings. The original task is unchanged, so other call sites keep using its defaults. You can override `retries`, `timeout`, `retry_delay`, and `num_returns` this way.
 
 ## Sync and async tasks
 
-Both sync and async functions work with `@agent_task`. Sync tasks run in the runtime's `ThreadPoolExecutor`; async tasks run directly on the runtime's event loop. Prefer async for I/O-bound work and sync for CPU-bound work.
+Both sync and async functions work with `@agent_task`. Sync tasks run in the runtime's `ThreadPoolExecutor`; async tasks run directly on the runtime's event loop. You can wrap any callable this way, whether or not you wrote it and whether or not it is `async`.
 
 ```python
 @agent_task
@@ -224,24 +224,6 @@ Some operators force a blocking wait to return a concrete value. See [Sync barri
 ## Sync barriers
 
 A handful of Python operators have to return a concrete value rather than another future. On an `AgentFuture` these trigger a blocking wait to resolve the underlying value.
-
-<Warning>
-  The most common trap is putting futures in a `set()` or using them as dict keys, which fires `__hash__`:
-
-  ```python
-  # WRONG: hashing futures is a sync barrier
-  futures = {add(1, 2), add(3, 4)}
-
-  # CORRECT: key by object identity
-  by_id: dict[int, AgentFuture] = {}
-  f = add(1, 2)
-  by_id[id(f)] = f
-  ```
-
-  Inside an `@agent_task`, a sync barrier on the runtime's own event loop raises `RuntimeError` instead of deadlocking. If you need to deduplicate or index futures, key by `id(future)` or an integer you control.
-</Warning>
-
-Here is the full list of operators that force a resolution:
 
 | Operator | Triggered by |
 |---|---|
