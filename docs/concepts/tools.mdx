@@ -90,8 +90,6 @@ async def search(query: str, max_results: int) -> str: ...
 
 The schema describes what the model sees; the function signature is what Motus calls when the tool runs. Make sure the field names match the parameter names so Motus can route the arguments correctly.
 
-Motus also exports `InputSchema`, a thin `BaseModel` subclass that strips redundant fields (`title`, `$defs`, `anyOf` wrappers) from the generated JSON Schema to save tokens. Use whichever you prefer; both work identically.
-
 ### `Annotated` for inline descriptions
 
 A lighter alternative when you only need to add descriptions and do not need validation. Add a string after the type in an `Annotated` wrapper.
