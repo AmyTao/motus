@@ -36,7 +36,7 @@ agent = ReActAgent(
 Motus reads the name, the docstring, and the type hints and builds the JSON Schema the LLM sees. Sync and async functions both work.
 
 <Tip>
-  Parameters without type annotations must have a default value.
+  Parameters without type annotations must have a default value. Adding docstrings to functions and descriptions to parameters is strongly recommended so the model understands when and how to call your tool.
 </Tip>
 
 ## The `@tool` decorator
