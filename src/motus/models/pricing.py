@@ -39,16 +39,23 @@ _PRICING: dict[str, dict[str, float]] = {
     },
     # MiniMax (via OpenRouter)
     "minimax/minimax-m2.5": {
-        "input": 0.19,
-        "output": 1.15,
-        "cache_write": 0.19,
-        "cache_read": 0.095,
+        "input": 0.118,
+        "output": 0.99,
+        "cache_write": 0.118,
+        "cache_read": 0.059,
     },
     "minimax/minimax-m2.7": {
         "input": 0.30,
         "output": 1.20,
         "cache_write": 0.30,
         "cache_read": 0.06,
+    },
+    # Kimi (via OpenRouter)
+    "moonshotai/kimi-k2.5": {
+        "input": 0.38,
+        "output": 1.72,
+        "cache_write": 0.38,
+        "cache_read": 0.19,
     },
     # OpenAI (via OpenRouter)
     "openai/gpt-5-mini": {
@@ -61,7 +68,7 @@ _PRICING: dict[str, dict[str, float]] = {
         "input": 1.75,
         "output": 14.00,
         "cache_write": 1.75,
-        "cache_read": 0.44,
+        "cache_read": 0.175,
     },
 }
 

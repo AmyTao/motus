@@ -389,7 +389,7 @@ ANTHROPIC_MODELS: Dict[str, ModelLimits] = {
     "claude-opus-4-6": ModelLimits(
         model_id="claude-opus-4-6",
         provider=ModelProvider.ANTHROPIC,
-        context_window=200_000,  # 1M with beta header, 200k default
+        context_window=1_000_000,
         max_output_tokens=128_000,
         description="Claude Opus 4.6 - latest most capable model",
     ),
@@ -411,7 +411,7 @@ ANTHROPIC_MODELS: Dict[str, ModelLimits] = {
     "claude-sonnet-4-6": ModelLimits(
         model_id="claude-sonnet-4-6",
         provider=ModelProvider.ANTHROPIC,
-        context_window=200_000,
+        context_window=1_000_000,
         max_output_tokens=64_000,
         description="Claude Sonnet 4.6 - latest balanced model",
     ),
@@ -423,41 +423,12 @@ ANTHROPIC_MODELS: Dict[str, ModelLimits] = {
         max_output_tokens=64_000,
         description="Claude Haiku 4.5 - fast and affordable",
     ),
-    # Convenience aliases
-    "claude-3-5-sonnet": ModelLimits(
-        model_id="claude-3-5-sonnet",
+    "claude-haiku-4-5": ModelLimits(
+        model_id="claude-haiku-4-5",
         provider=ModelProvider.ANTHROPIC,
         context_window=200_000,
-        max_output_tokens=8_192,
-        description="Claude 3.5 Sonnet alias",
-    ),
-    "claude-3-5-haiku": ModelLimits(
-        model_id="claude-3-5-haiku",
-        provider=ModelProvider.ANTHROPIC,
-        context_window=200_000,
-        max_output_tokens=8_192,
-        description="Claude 3.5 Haiku alias",
-    ),
-    "claude-3-opus": ModelLimits(
-        model_id="claude-3-opus",
-        provider=ModelProvider.ANTHROPIC,
-        context_window=200_000,
-        max_output_tokens=4_096,
-        description="Claude 3 Opus alias",
-    ),
-    "claude-3-sonnet": ModelLimits(
-        model_id="claude-3-sonnet",
-        provider=ModelProvider.ANTHROPIC,
-        context_window=200_000,
-        max_output_tokens=4_096,
-        description="Claude 3 Sonnet alias",
-    ),
-    "claude-3-haiku": ModelLimits(
-        model_id="claude-3-haiku",
-        provider=ModelProvider.ANTHROPIC,
-        context_window=200_000,
-        max_output_tokens=4_096,
-        description="Claude 3 Haiku alias",
+        max_output_tokens=64_000,
+        description="Claude Haiku 4.5 - fast and affordable",
     ),
 }
 
@@ -479,14 +450,14 @@ GOOGLE_MODELS: Dict[str, ModelLimits] = {
         model_id="gemini-2.5-flash",
         provider=ModelProvider.GOOGLE,
         context_window=1_048_576,
-        max_output_tokens=65_535,
+        max_output_tokens=65_536,
         description="Gemini 2.5 Flash - fast reasoning",
     ),
     "gemini-2.5-flash-lite": ModelLimits(
         model_id="gemini-2.5-flash-lite",
         provider=ModelProvider.GOOGLE,
         context_window=1_048_576,
-        max_output_tokens=65_535,
+        max_output_tokens=65_536,
         description="Gemini 2.5 Flash-Lite - fastest and most affordable",
     ),
     # Gemini 2.0 series
@@ -643,21 +614,6 @@ XAI_MODELS: Dict[str, ModelLimits] = {
         max_output_tokens=4_096,
         description="Grok 2 Vision latest alias",
     ),
-    # Grok Beta
-    "grok-beta": ModelLimits(
-        model_id="grok-beta",
-        provider=ModelProvider.XAI,
-        context_window=131_072,
-        max_output_tokens=4_096,
-        description="Grok Beta",
-    ),
-    "grok-vision-beta": ModelLimits(
-        model_id="grok-vision-beta",
-        provider=ModelProvider.XAI,
-        context_window=8_192,
-        max_output_tokens=4_096,
-        description="Grok Vision Beta",
-    ),
 }
 
 
@@ -679,6 +635,13 @@ MINIMAX_MODELS: Dict[str, ModelLimits] = {
         context_window=204_800,
         max_output_tokens=131_072,
         description="MiniMax M2.7 - next-gen reasoning model",
+    ),
+    "moonshotai/kimi-k2.5": ModelLimits(
+        model_id="moonshotai/kimi-k2.5",
+        provider=ModelProvider.OPENAI,
+        context_window=262_144,
+        max_output_tokens=65_536,
+        description="Kimi K2.5 - strong open-source coding/reasoning model",
     ),
     "openai/gpt-5-mini": ModelLimits(
         model_id="openai/gpt-5-mini",
