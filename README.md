@@ -16,7 +16,7 @@
 
 <h3 align="center">
   Higher capability. Lower cost. Faster agents.<br/>
-  Self-managed or cloud deployment in one command. Same code, any scale.
+  Self-managed or cloud deployment, agent serving in one command. Same code, any scale.
 </h3>
 
 <p align="center">
@@ -31,7 +31,7 @@
 
 ## About
 
-Agentic inference is exploding. Motus is an open-source agent serving project that enables higher capability, lower cost, and faster agents. It keeps deployment simple across self-managed and cloud environments at any scale.
+Motus is an open-source agent serving project that enables higher capability, lower cost, and faster agents. As building agents has never been easier, Motus takes a no-framework approach and provides the infrastructure needed for efficient agent serving. Deploy simply across self-managed and cloud environments at any scale.
 
 ## Use with your coding agent
 
@@ -101,7 +101,7 @@ motus serve chat https://myapp.lithosai.com "Hello!"
 
 ## Build with Motus
 
-Motus provides a complete agent toolkit---including agents, tools, memory, guardrails, and tracing---powered by a runtime that automatically converts Python code into parallel, resilient workflows. Everything is designed to be simple, intuitive, and customizable.
+Motus is powered by a serving runtime that automatically converts Python code into parallel, resilient workflows. Everything is designed to be simple, intuitive, and customizable.
 
 ### Build an agent
 
@@ -152,8 +152,8 @@ post = publish(summary, hashtags)       # Waits for both upstream tasks.
 print(resolve(post)) # get final result
 ```
 
-No explicit DAGs—just Python. Motus leverages `@agent_task` decorators to turn Python functions into asynchrous tasks.
-Motus handles scheduling, parallelism, caching, resilience, tracing, and so on. [Learn more about the Motus runtime](docs/user-guide/runtime.md).
+No explicit DAGs, just Python. Motus leverages `@agent_task` decorators to turn Python functions into asynchrous tasks.
+Motus handles sits under your agents providing scheduling, parallelism, caching, resilience, observability and tracing. [Learn more about the Motus runtime](docs/user-guide/runtime.md).
 
 ### Examples
 
