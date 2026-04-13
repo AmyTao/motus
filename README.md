@@ -21,7 +21,7 @@
 
 <p align="center">
   <a href="https://www.lithosai.com/">LithosAI</a> &middot;
-  <a href="http://console.lithosai.cloud/">Cloud</a> &middot;
+  <a href="https://console.lithosai.cloud/">Cloud</a> &middot;
   <a href="https://docs.motus.lithosai.com/">Docs</a> &middot;
   <a href="https://docs.motus.lithosai.com/getting-started/quickstart">Quickstart</a> &middot;
   <a href="https://github.com/lithos-ai/motus/tree/main/examples">Examples</a> &middot;
@@ -152,8 +152,8 @@ post = publish(summary, hashtags)       # Waits for both upstream tasks.
 print(resolve(post)) # get final result
 ```
 
-No explicit DAGs, just Python. Motus leverages `@agent_task` decorators to turn Python functions into asynchrous tasks.
-Motus handles sits under your agents providing scheduling, parallelism, caching, resilience, observability and tracing. [Learn more about the Motus runtime](https://docs.motus.lithosai.com/concepts/workflow).
+No explicit DAGs, just Python. Motus leverages `@agent_task` decorators to turn Python functions into asynchronous tasks.
+Motus sits under your agents, providing scheduling, parallelism, caching, resilience, observability, and tracing. [Learn more about the Motus runtime](https://docs.motus.lithosai.com/concepts/workflow).
 
 ### Examples
 
