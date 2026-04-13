@@ -168,7 +168,9 @@ def _worker_entry(conn, import_path, message, state, session_id=None):
             value = message.user_params.get(param_key)
             if value is not None:
                 os.environ[env_name] = str(value)
-        remaining = {k: v for k, v in message.user_params.items() if k not in _USER_PARAMS_TO_ENV}
+        remaining = {
+            k: v for k, v in message.user_params.items() if k not in _USER_PARAMS_TO_ENV
+        }
         message.user_params = remaining or None
 
     cwd = os.getcwd()
