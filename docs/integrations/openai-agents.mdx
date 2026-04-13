@@ -3,7 +3,7 @@ title: "OpenAI Agents SDK"
 description: "Run OpenAI Agents SDK code with Motus tracing and deployment."
 ---
 
-Run your existing OpenAI Agents SDK code through Motus with automatic tracing
+Let Motus run your existing OpenAI Agents SDK code with automatic tracing
 and cloud deployment. Import from `motus.openai_agents` instead of `agents`.
 Your agent definitions, tool functions, and run logic stay exactly the same.
 
@@ -17,7 +17,7 @@ Your agent definitions, tool functions, and run logic stay exactly the same.
   </Tab>
   <Tab title="pip">
     ```bash
-    pip install "lithosai-motus[openai-agents]"
+    pip install 'lithosai-motus[openai-agents]'
     ```
   </Tab>
 </Tabs>
@@ -154,7 +154,7 @@ All OpenAI Agents SDK features are supported:
 In addition to re-exporting the full `agents` package, `motus.openai_agents` provides these additional names:
 
 | Export | Description |
-|---|---|
+| --- | --- |
 | `MotusModel` | Base model wrapper |
 | `MotusResponsesModel` | Responses API model wrapper |
 | `MotusChatCompletionsModel` | Chat Completions API model wrapper |
@@ -169,7 +169,6 @@ In addition to re-exporting the full `agents` package, `motus.openai_agents` pro
 <Note>
   `from motus.openai_agents import X` re-exports everything from the `agents` package. Motus overrides `Runner`, `OpenAIProvider`, `MultiProvider`, and model classes with its own wrappers at import time.
 </Note>
-
 ## Traced span types
 
 The integration produces span types in `TraceManager` via the `MotusTracingProcessor`, which bridges OpenAI Agents SDK span events:
