@@ -29,9 +29,7 @@ class AnthropicChatClient(BaseChatClient):
         api_key: API key for authentication (sk-ant-api...)
     """
 
-    def __init__(
-        self, api_key: Optional[str] = None, **kwargs
-    ):
+    def __init__(self, api_key: Optional[str] = None, **kwargs):
         if api_key:
             self._client = AsyncAnthropic(api_key=api_key, **kwargs)
         else:
