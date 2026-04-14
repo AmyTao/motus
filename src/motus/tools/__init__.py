@@ -24,6 +24,8 @@ from .core import (
     tools_from,
 )
 from .providers import (
+    CloudSandbox,
+    CloudSandboxToolProvider,
     DockerSandbox,
     DockerToolProvider,
     LocalShell,
@@ -51,6 +53,8 @@ __all__ = [
     "Tools",
     "tools_from",
     # Providers
+    "CloudSandbox",
+    "CloudSandboxToolProvider",
     "DockerSandbox",
     "DockerToolProvider",
     "LocalShell",
@@ -66,7 +70,7 @@ __all__ = [
 
 
 def DEFAULT_TOOL_PROVIDER():
-    return CompositeToolProvider([DockerToolProvider()])
+    return CompositeToolProvider([CloudSandboxToolProvider(), DockerToolProvider()])
 
 
 # ---------------------------------------------------------------------------

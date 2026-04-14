@@ -1,14 +1,14 @@
 {
-  "name": "motus-marketplace",
+  "name": "LithosAI",
   "interface": {
-    "displayName": "Motus"
+    "displayName": "LithosAI"
   },
   "plugins": [
     {
       "name": "motus",
       "source": {
         "source": "local",
-        "path": "./plugins/motus"
+        "path": "./.agents/plugins/motus"
       },
       "policy": {
         "installation": "AVAILABLE",

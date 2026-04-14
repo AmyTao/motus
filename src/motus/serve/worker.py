@@ -25,6 +25,13 @@ logger = logging.getLogger("motus.serve.worker")
 
 DEFAULT_MAX_WORKERS = 4
 
+# user_params keys that are promoted to worker env vars and stripped
+# before the message reaches the agent.
+_USER_PARAMS_TO_ENV: dict[str, str] = {
+    "sandbox_url": "SANDBOX_URL",
+    "sandbox_token": "SANDBOX_TOKEN",
+}
+
 
 @dataclass
 class WorkerResult:
@@ -154,6 +161,18 @@ def _worker_entry(conn, import_path, message, state, session_id=None):
     if session_id:
         os.environ["MOTUS_SESSION_ID"] = session_id
 
+    # Promote designated user_params to env vars and strip them from the
+    # message so the agent never sees infrastructure-level credentials.
+    if message.user_params:
+        for param_key, env_name in _USER_PARAMS_TO_ENV.items():
+            value = message.user_params.get(param_key)
+            if value is not None:
+                os.environ[env_name] = str(value)
+        remaining = {
+            k: v for k, v in message.user_params.items() if k not in _USER_PARAMS_TO_ENV
+        }
+        message.user_params = remaining or None
+
     cwd = os.getcwd()
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
@@ -207,13 +226,20 @@ def _worker_entry(conn, import_path, message, state, session_id=None):
                 trace_metrics=metrics,
             )
         )
-    except Exception:
+    except BaseException as exc:
         metrics = _get_trace_metrics()
         _finalize_trace()
+        # Log the full traceback for debugging, but send only the
+        # exception message to the client to avoid walls of red text.
+        # Use BaseException to also catch SystemExit and KeyboardInterrupt
+        # so the parent always receives a WorkerResult instead of seeing
+        # "Worker process exited unexpectedly".
+        logger.error("Agent turn failed:\n%s", traceback.format_exc())
+        error_msg = f"{type(exc).__name__}: {exc}"
         conn.send(
             WorkerResult(
                 success=False,
-                error=traceback.format_exc(),
+                error=error_msg,
                 trace_metrics=metrics,
             )
         )
