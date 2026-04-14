@@ -102,7 +102,7 @@ agent = ReActAgent(client=client, model_name="gpt-4o", memory=restored)
 # Agent continues with the previous conversation's context
 ```
 
-`restore_from_log` replays all log entries (messages and compaction events) to rebuild the in-memory state. The restored instance appends to the same session log. 
+`restore_from_log` replays all log entries (messages and compaction events) to rebuild the in-memory state. The restored instance appends to the same session log.
 
 For programmatic session persistence without log files, use `CompactionSessionState`:
 
