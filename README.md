@@ -195,7 +195,6 @@ Learn more from our [comprehensive examples](examples/).
 | **SDK compatibility** | Drop-in for [OpenAI Agents SDK](https://docs.motus.lithosai.com/integrations/openai-agents), [Anthropic SDK](https://docs.motus.lithosai.com/integrations/anthropic-sdk), and [Google ADK](https://docs.motus.lithosai.com/integrations/google-adk). Change the import, keep your code. |
 | **[Human-in-the-loop](https://docs.motus.lithosai.com/guides/human-in-the-loop)** | Built-in support for interactive approval, clarification, and feedback during agent execution. Pause the agent, ask for human input, and resume. Works in both local serving and cloud deployment. |
 
-
 ---
 
 ## Contributing
