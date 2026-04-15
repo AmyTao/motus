@@ -8,7 +8,7 @@ Any time an agent runs a shell command or executes Python, the interesting quest
 `Sandbox` is an abstract execution environment. You create one, run commands in it, move files in and out, and close it when you are done. Because the interface is a clean abstract class, a sandbox can be backed by anything: a local Docker container, a remote machine, a microVM, a serverless runtime, your own in-house isolation technology. Motus ships two reference backends so you do not have to start from scratch:
 
 - **`DockerSandbox`** runs work inside a local Docker container. Great for local development and self-hosted deployments.
-- **`CloudSandbox`** talks to a remote sandbox over a REST API. Used automatically when your agent runs on [Motus Cloud](/cloud/overview).
+- **`CloudSandbox`** talks to a remote sandbox over a REST API. Used automatically when your agent runs on [Motus Cloud](/cloud/overview); see [Cloud Sandbox](/cloud/sandbox) for the cloud-specific behavior.
 
 **The same `get_sandbox(...)` call works in both places**. You get a `DockerSandbox` on your laptop and a `CloudSandbox` when the deploy target is Motus Cloud. If neither fits, implement the `Sandbox` interface yourself and callers of `get_sandbox()` keep working unchanged.
 
@@ -32,7 +32,7 @@ That's the whole loop. `get_sandbox()` picks the right backend, the `with` block
 
 Your code makes the same `get_sandbox(...)` call in both environments. Locally it returns a `DockerSandbox`. When the same agent runs on Motus Cloud, it returns a `CloudSandbox` that talks to a sandbox the cloud side manages for you. The switch happens automatically.
 
-Motus Cloud currently runs your agent inside a fixed, Motus-provided sandbox image.
+Motus Cloud currently runs your agent inside a fixed, Motus-provided sandbox image. See [Cloud Sandbox](/cloud/sandbox) for the cloud-specific lifecycle, limits, and console UI.
 
 ## Creating a sandbox
 
@@ -195,9 +195,9 @@ Sandboxes created with `create()` / `acreate()` own the underlying container: cl
   </Tab>
 
   <Tab title="CloudSandbox (Motus Cloud)">
-    Used automatically when your agent runs on Motus Cloud. It does not create or destroy containers itself; it is an HTTP client for a sandbox managed by the cloud side. You control the image, resource limits, and any other provisioning details through your deployment configuration.
+    Used automatically when your agent runs on Motus Cloud. It does not create or destroy containers itself; it is an HTTP client for a sandbox managed by the cloud side.
 
-    `exec`, `put`, and `get` all round-trip over the network, so you do not need Docker on the host.
+    `exec`, `put`, and `get` all round-trip over the network, so you do not need Docker on the host. See [Cloud Sandbox](/cloud/sandbox) for the lifecycle, limits, and console UI.
   </Tab>
 
   <Tab title="LocalShell (no isolation)">
@@ -221,8 +221,8 @@ Sandboxes created with `create()` / `acreate()` own the underlying container: cl
   <Card title="Tools" icon="screwdriver-wrench" href="/concepts/tools">
     How the `@tool` decorator, `builtin_tools`, and sandbox fit together.
   </Card>
-  <Card title="Motus Cloud" icon="cloud" href="/cloud/overview">
-    How your agents end up running on cloud sandboxes without a code change.
+  <Card title="Cloud Sandbox" icon="cube" href="/cloud/sandbox">
+    Per-session containers on Motus Cloud: lifecycle, limits, and console UI.
   </Card>
   <Card title="MCP integration" icon="plug" href="/guides/mcp-integration">
     Running MCP servers inside a sandbox when you want their side effects contained.
